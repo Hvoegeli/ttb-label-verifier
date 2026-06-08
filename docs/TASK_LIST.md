@@ -5,15 +5,15 @@ Phased breakdown. Phase 1 is the MVP: a working single label distilled spirits p
 ## Phase 1: MVP
 
 ### 1. Project setup [MVP12]
-- [ ] Initialize git repo, add `.gitignore` and `.env` template
-- [ ] Create `requirements.txt` with the locked dependencies
-- [ ] Scaffold FastAPI app with `/`, `/verify`, `/healthz`
-- [ ] Confirm local run with Uvicorn
+- [x] Initialize git repo, add `.gitignore` and `.env` template (plus committed `.env.example`)
+- [x] Create `requirements.txt` with the locked dependencies
+- [x] Scaffold FastAPI app with `/` (landing), `/upload`, `/verify`, `/healthz`
+- [x] Confirm local run with Uvicorn
 
 ### 2. Image upload and UI shell [MVP1] [MVP10]
-- [ ] Upload page (Jinja2): single file input, submit button, short instructions
-- [ ] Image type and size validation with Pillow before any model call
-- [ ] Result page skeleton: overall verdict banner, per field rows, uploaded image preview
+- [x] Beverage-selection landing page + upload page (Jinja2): single file input, submit button, short instructions
+- [x] Image type and size validation with Pillow before any model call (normalize to JPEG, strip EXIF, downscale, HEIC support)
+- [x] Result page skeleton: overall verdict banner, per field rows, uploaded image preview
 
 ### 3. Vision extraction [MVP2] [MVP11]
 - [ ] `extractor.py`: encode image, build the tool-use schema for label fields

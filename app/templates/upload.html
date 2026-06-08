@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Upload a label{% endblock %}
+{% block content %}
+<p><a class="back" href="/">&larr; Change type</a></p>
+<h1>Upload a distilled spirits label</h1>
+<p class="lead">Take or choose a clear photo of the label. JPG, PNG, WebP, or HEIC.</p>
+
+{% if error %}
+<div class="alert error">{{ error }}</div>
+{% endif %}
+
+<form class="upload-form" action="/verify" method="post" enctype="multipart/form-data">
+  <input type="hidden" name="beverage" value="{{ beverage }}">
+
+  <label class="field">
+    <span class="field-label">Label image</span>
+    <input type="file" name="image" accept="image/*,.heic,.heif" required>
+  </label>
+
+  <details class="optional">
+    <summary>Optional: compare against an application</summary>
+    <p class="hint">Paste application data as JSON (modeled on TTB Form 5100.31 fields). Leave blank to check compliance only.</p>
+    <textarea name="application" rows="6"
+      placeholder='{"brand_name": "OLD TOM DISTILLERY", "class_type": "Kentucky Straight Bourbon Whiskey", "alcohol_content": "45% Alc./Vol.", "net_contents": "750 mL"}'></textarea>
+  </details>
+
+  <button class="primary" type="submit">Verify label</button>
+</form>
+{% endblock %}

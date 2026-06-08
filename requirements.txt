@@ -1,0 +1,17 @@
+# Web app
+fastapi
+uvicorn[standard]
+jinja2
+python-multipart        # parses multipart form uploads
+python-dotenv           # loads .env for local dev (no-op in prod)
+
+# Claude vision (used in Task Group 3)
+anthropic
+
+# Image normalization
+pillow                  # validate, re-encode to JPEG, strip EXIF, downscale
+pillow-heif             # decode HEIC (phone camera default) so it can be normalized
+
+# Dev / test
+pytest
+httpx                   # FastAPI TestClient dependency

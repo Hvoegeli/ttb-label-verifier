@@ -15,7 +15,12 @@ Running log of build, runtime, API, and deployment errors and how they were reso
 
 ## Log
 
-*No errors logged yet.*
+### 2026-06-07: Jinja2 crash on template render (Starlette signature change)
+- Error: `TypeError: cannot use 'tuple' as a dict key (unhashable type: 'dict')` from jinja2 LRUCache when rendering any template; all template routes failed, only `/healthz` passed.
+- Context: First pytest run of the app shell on Python 3.14 with Starlette 1.2.1.
+- Root cause: The installed Starlette changed `TemplateResponse` to the request-first signature `TemplateResponse(request, name, context)`. The old `TemplateResponse(name, {"request": request, ...})` form caused Starlette to treat the context dict as the template name, so Jinja2 tried to use a dict as a cache key.
+- Fix: Updated all five `templates.TemplateResponse(...)` calls in `app/main.py` to the request-first signature and removed `request` from the context dicts.
+- Prevention: On current Starlette, always pass `request` as the first positional argument to `TemplateResponse`. Pinning versions (pip freeze) will keep this stable across machines.
 
 ## Common Issues to Watch For
 

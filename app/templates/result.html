@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Verification result{% endblock %}
+{% block content %}
+<p><a class="back" href="/upload?beverage={{ beverage }}">&larr; Check another label</a></p>
+
+<div class="verdict verdict-{{ result.overall|lower|replace(' ', '-') }}">
+  <span class="verdict-label">{{ result.overall }}</span>
+  {% if result.processing_ms is not none %}
+  <span class="verdict-time">verified in {{ '%.1f' % (result.processing_ms / 1000) }}s</span>
+  {% endif %}
+</div>
+
+{% if result.note %}
+<div class="alert info">{{ result.note }}</div>
+{% endif %}
+
+<div class="result-grid">
+  <div class="result-image">
+    <img src="data:image/jpeg;base64,{{ image_b64 }}" alt="Uploaded label">
+  </div>
+
+  <div class="result-detail">
+    <h2>Label vs Law</h2>
+    {% if result.fields %}
+    <table class="fields">
+      <thead>
+        <tr><th>Field</th><th>Status</th><th>Reason</th><th>Citation</th></tr>
+      </thead>
+      <tbody>
+        {% for f in result.fields %}
+        <tr class="row-{{ f.status|lower|replace(' ', '-') }}">
+          <td>{{ f.name }}</td>
+          <td>{{ f.status }}</td>
+          <td>{{ f.reason }}</td>
+          <td>{{ f.citation }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="muted">Compliance checks are added in the next task groups.</p>
+    {% endif %}
+
+    {% if result.match %}
+    <h2>Label vs Application</h2>
+    <table class="fields">
+      <thead><tr><th>Field</th><th>Result</th></tr></thead>
+      <tbody>
+        {% for name, outcome in result.match.items() %}
+        <tr><td>{{ name }}</td><td>{{ outcome }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Choose beverage type{% endblock %}
+{% block content %}
+<h1>What are you checking?</h1>
+<p class="lead">Choose the type of alcohol on the label.</p>
+
+<div class="choice-grid">
+  {% for b in beverages %}
+    {% if b.active %}
+      <a class="choice-card active" href="/upload?beverage={{ b.id }}">
+        <span class="choice-name">{{ b.name }}</span>
+        <span class="choice-go">Start &rarr;</span>
+      </a>
+    {% else %}
+      <div class="choice-card disabled" aria-disabled="true">
+        <span class="choice-name">{{ b.name }}</span>
+        <span class="choice-soon">Coming soon</span>
+      </div>
+    {% endif %}
+  {% endfor %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Prime the server on arrival so the first real label check is warm.
+  fetch('/healthz').catch(function () {});
+</script>
+{% endblock %}
