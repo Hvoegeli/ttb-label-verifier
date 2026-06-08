@@ -60,7 +60,7 @@ _BASE_REQUIRED = list(_BASE_PROPERTIES.keys())
 # Extra fields read only for specific beverages.
 _EXTRA_PROPERTIES = {
     "wine": {
-        "appellation": {"type": ["string", "null"], "description": "The appellation of origin (where the grapes are from), e.g. 'Napa Valley', or null."},
+        "appellation": {"type": ["string", "null"], "description": "The appellation of origin claimed for the wine (where the grapes are from), e.g. 'Napa Valley' or 'Sonoma Coast', usually shown near the brand or varietal. Record it ONLY if it appears as a stated origin claim for the wine. Do NOT infer it from the city in the producer/bottler address (a bottler located in Napa is not an appellation claim). Null if no appellation is stated."},
         "vintage": {"type": ["string", "null"], "description": "The vintage year if shown, e.g. '2019', or null."},
         "grape_varietal": {"type": ["string", "null"], "description": "The grape varietal if shown, e.g. 'Cabernet Sauvignon', or null."},
         "sulfite_statement": {"type": ["string", "null"], "description": "The sulfite declaration exactly as printed, e.g. 'Contains Sulfites', or null."},
@@ -75,6 +75,19 @@ _BEVERAGE_NOUN = {
     "spirits": "distilled spirits",
     "wine": "wine",
     "beer": "malt beverage (beer)",
+}
+
+# Beverage-specific guidance appended to the prompt for tricky fields.
+_EXTRA_GUIDANCE = {
+    "wine": (
+        " IMPORTANT about the appellation field: an appellation of origin is a "
+        "grape-growing region CLAIMED for the wine, such as 'Napa Valley', 'Sonoma "
+        "Coast', or 'Willamette Valley', and it is usually shown near the brand or "
+        "the varietal. The city inside the producer or bottler address line is NOT "
+        "an appellation: for example in 'Produced and bottled by Stonecrest Cellars, "
+        "Napa, CA', the 'Napa' is just the bottler's location, so appellation must be "
+        "null unless a region is separately claimed for the wine itself."
+    ),
 }
 
 
@@ -105,6 +118,7 @@ def _build_prompt(beverage: str) -> str:
         "compliance. For the government warning, copy it verbatim, character for character. "
         "If a field is not present on any image, use null. If the images are too unclear to "
         "read a field confidently, set the legibility flags to false rather than guessing."
+        + _EXTRA_GUIDANCE.get(beverage, "")
     )
 
 _client: anthropic.Anthropic | None = None
