@@ -22,17 +22,17 @@ Phased breakdown. Phase 1 is the MVP: a working single label distilled spirits p
 - [x] Confirm exact model id and params against the claude-api reference (default claude-haiku-4-5, $1/$5; Sonnet fallback via CLAUDE_MODEL)
 
 ### 4. Rule engine: distilled spirits [MVP3] [MVP4] [MVP5] [MVP6] [MVP7]
-- [ ] `rules/warning.py`: verbatim Government Warning check (27 CFR 16.21) plus capitals on "GOVERNMENT WARNING:" (27 CFR 16.22); whitespace normalized only
-- [ ] `rules/fill.py`: net contents against the authorized standards of fill list (27 CFR 5.203)
-- [ ] `rules/abv.py`: percent alcohol by volume format accepted; proof optional and only alongside the percent (27 CFR 5.65)
-- [ ] `rules/classtype.py`: class/type present and a recognized designation (27 CFR 5.141 to 5.143)
-- [ ] `rules/presence.py`: all mandatory elements present (27 CFR 5.63)
-- [ ] Each rule returns a structured outcome: status, plain reason, CFR citation
+- [x] `rules/warning.py`: verbatim Government Warning check (27 CFR 16.21) plus capitals on "GOVERNMENT WARNING:" (27 CFR 16.22); whitespace normalized only; char-level diff + Tier 2 advisory
+- [x] `rules/fill.py`: net contents against the authorized standards of fill list (27 CFR 5.203)
+- [x] `rules/abv.py`: percent alcohol by volume format accepted; proof optional and only alongside the percent (27 CFR 5.65)
+- [x] `rules/classtype.py`: class/type present and a recognized designation (27 CFR 5.141 to 5.143)
+- [x] `rules/presence.py`: all mandatory elements present (27 CFR 5.63); brand fallback to name/address (5.64(a))
+- [x] Each rule returns a structured outcome: status, plain reason, CFR citation (25 unit tests)
 
 ### 5. Verdict and match check [MVP8] [MVP9]
-- [ ] Verdict assembler: combine rule outcomes into PASS / FAIL / NEEDS REVIEW with a per field breakdown
+- [x] Verdict assembler: combine rule outcomes into PASS / FAIL / NEEDS REVIEW (FAIL>REVIEW>PASS), wired into /verify and the result page
 - [ ] `matcher.py`: compare fields to a mock application JSON; brand normalized, warning exact
-- [ ] Wire verdict and match results into the result page
+- [ ] Wire match results into the result page (Label vs Application block)
 
 ### 6. Deploy [MVP12]
 - [ ] Render web service from the GitHub repo

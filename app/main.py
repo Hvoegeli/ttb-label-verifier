@@ -23,6 +23,7 @@ from . import costs
 from .config import settings
 from .extractor import ExtractionError, extract_fields
 from .images import ImageValidationError, has_allowed_extension, normalize_to_jpeg
+from .rules import overall_verdict, run_rules
 
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -166,13 +167,15 @@ async def verify(
         latency_ms=processing_ms,
     )
 
-    # Confidence gate: never auto-pass an image we could not read confidently.
+    # Confidence gate: never run compliance checks on an image we could not read.
     if not fields.overall_legible:
+        outcomes = []
         overall = "NEEDS REVIEW"
         note = "The image was not clear enough to read confidently. Please upload a sharper, well-lit, straight-on photo."
     else:
-        overall = "PENDING"
-        note = "Fields read from the label. Compliance rule checks are added in the next task group."
+        outcomes = run_rules(fields)
+        overall = overall_verdict(outcomes, fields.overall_legible)
+        note = None
 
     # Only the content fields are displayed; the legibility flags drive logic, not the table.
     extracted = {
@@ -186,7 +189,7 @@ async def verify(
 
     result = {
         "overall": overall,
-        "fields": [],            # rule rows arrive in Task Group 4
+        "fields": [o.as_row() for o in outcomes],
         "extracted": extracted,
         "match": None,
         "note": note,

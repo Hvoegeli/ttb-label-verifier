@@ -13,6 +13,7 @@ import app.main as main_module
 from app import costs as costs_module
 from app.extractor import ExtractedFields, ExtractionError, ExtractionResult
 from app.main import app
+from app.rules.warning import CANONICAL as WARNING_TEXT
 
 client = TestClient(app)
 
@@ -31,7 +32,7 @@ def _fake_fields(**overrides):
         alcohol_content="45% Alc./Vol. (90 Proof)",
         net_contents="750 mL",
         name_and_address="Old Tom Distillery, Bardstown, KY",
-        government_warning="GOVERNMENT WARNING: (1) ...",
+        government_warning=WARNING_TEXT,
         warning_legible=True,
         overall_legible=True,
     )
@@ -81,7 +82,8 @@ def test_verify_extracts_and_shows_fields(monkeypatch):
     r = client.post("/verify", files=files, data={"beverage": "spirits"})
     assert r.status_code == 200
     assert "OLD TOM DISTILLERY" in r.text  # extracted field shown
-    assert "PENDING" in r.text             # rules not wired yet, but legible
+    assert "PASS" in r.text                # fully compliant fixture -> overall PASS
+    assert "27 CFR" in r.text              # CFR citations rendered
     assert "0.0042" in r.text              # per-label cost shown
 
 
