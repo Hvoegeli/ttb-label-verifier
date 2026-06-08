@@ -121,6 +121,14 @@ table.fields th { font-size: 14px; text-transform: uppercase; letter-spacing: 0.
 .advisory ul { margin: 8px 0 0; padding-left: 18px; font-size: 15px; }
 .advisory li { margin-bottom: 6px; }
 
+/* Loading overlay shown during the model call */
+.loading-overlay { position: fixed; inset: 0; background: rgba(245, 246, 248, 0.92); display: flex; align-items: center; justify-content: center; z-index: 50; }
+.loading-overlay[hidden] { display: none; }
+.loading-card { text-align: center; padding: 0 20px; }
+.loading-title { font-size: 20px; font-weight: 600; margin: 0 0 4px; color: var(--ink); }
+.spinner { width: 46px; height: 46px; border: 4px solid var(--line); border-top-color: var(--navy); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
 /* Human-in-the-loop caveat + warning transcription diff */
 .human-note { font-size: 14px; color: var(--muted); background: #f7f8fa; border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; margin: 0 0 16px; }
 .result-image img + img { margin-top: 12px; }

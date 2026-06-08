@@ -18,6 +18,13 @@ RECOGNIZED = {
     "applejack", "tequila", "mezcal", "liqueur", "cordial", "schnapps", "aquavit",
     "absinthe", "grappa", "neutral spirits", "grain spirits", "spirit whiskey",
     "distilled spirits specialty",
+    # Agave age statements (with and without the accent, since a photo read can
+    # drop it): these often appear as the class/type when the model splits the
+    # field, e.g. "Añejo" without the leading "Tequila". Recognizing them avoids a
+    # benign review on a common, clearly-identified bottle.
+    "anejo", "añejo", "reposado", "blanco", "joven", "extra anejo", "extra añejo",
+    # Cream and flavored liqueur designations seen on real labels.
+    "irish cream", "cream liqueur",
 }
 
 

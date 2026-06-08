@@ -127,6 +127,12 @@ def test_classtype_unrecognized_reviews():
     assert classtype.check(fields(class_type="Mystery Elixir")).status == REVIEW
 
 
+def test_classtype_age_and_cream_recognized():
+    # Designations the real-photo eval flagged as benign reviews now pass.
+    for ct in ("Añejo", "AÑEJO", "Anejo", "Reposado", "Blanco", "Irish Cream", "Cream Liqueur"):
+        assert classtype.check(fields(class_type=ct)).status == PASS, ct
+
+
 # --- Mandatory presence (27 CFR 5.63) ---
 
 def test_presence_all_present_passes():

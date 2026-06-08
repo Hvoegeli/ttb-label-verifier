@@ -75,6 +75,13 @@ def test_upload_page_renders():
     assert "Upload a distilled spirits label" in r.text
 
 
+def test_upload_page_has_loading_indicator():
+    r = client.get("/upload")
+    assert r.status_code == 200
+    assert "loading-overlay" in r.text
+    assert "Reading the label" in r.text
+
+
 def test_verify_extracts_and_shows_fields(monkeypatch):
     # Mock the vision call so the test is free and deterministic.
     monkeypatch.setattr(main_module, "extract_fields", lambda jpeg: _fake_result())

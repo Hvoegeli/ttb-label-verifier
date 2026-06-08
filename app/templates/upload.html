@@ -9,7 +9,7 @@
 <div class="alert error">{{ error }}</div>
 {% endif %}
 
-<form class="upload-form" action="/verify" method="post" enctype="multipart/form-data">
+<form class="upload-form" action="/verify" method="post" enctype="multipart/form-data" id="verify-form">
   <input type="hidden" name="beverage" value="{{ beverage }}">
 
   <label class="field">
@@ -30,6 +30,27 @@
       placeholder='{"brand_name": "OLD TOM DISTILLERY", "class_type": "Kentucky Straight Bourbon Whiskey", "alcohol_content": "45% Alc./Vol.", "net_contents": "750 mL"}'></textarea>
   </details>
 
-  <button class="primary" type="submit">Verify label</button>
+  <button class="primary" type="submit" id="verify-btn">Verify label</button>
 </form>
+
+<div class="loading-overlay" id="loading-overlay" hidden>
+  <div class="loading-card">
+    <div class="spinner" aria-hidden="true"></div>
+    <p class="loading-title">Reading the label...</p>
+    <p class="hint">This takes a few seconds while the label is read and checked against the rules.</p>
+  </div>
+</div>
+
+<script>
+  (function () {
+    var form = document.getElementById('verify-form');
+    var overlay = document.getElementById('loading-overlay');
+    var btn = document.getElementById('verify-btn');
+    if (!form) return;
+    form.addEventListener('submit', function () {
+      if (overlay) overlay.hidden = false;
+      if (btn) { btn.disabled = true; btn.textContent = 'Reading the label...'; }
+    });
+  })();
+</script>
 {% endblock %}
