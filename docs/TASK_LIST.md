@@ -60,10 +60,10 @@ Phased breakdown. Phase 1 is the MVP: a working single label distilled spirits p
 ## Phase 3: Final
 
 ### 9. Eval and tests [MVP13]
-- [x] Build the known-answer mutant corpus (23 cases) with planted violations (title case warning, illegal fill size, dropped warning sentence, proof without percent) plus compliant and review cases (`evals/corpus.py`). NOTE: built as field-level mutants (extracted-field values, not rendered image files) so the rule engine can be proven for $0 in CI; the real-photo *image* eval (the extraction half) remains a manual local test with actual bottle labels.
+- [x] Build the known-answer mutant corpus (52 cases) with planted violations (title case warning, illegal fill size, dropped warning sentence, proof without percent) plus compliant, boundary, and review cases (`evals/corpus.py`). NOTE: built as field-level mutants (extracted-field values, not rendered image files) so the rule engine can be proven for $0 in CI; the real-photo *image* eval (the extraction half) remains a manual local test with actual bottle labels.
 - [x] Unit tests per rule function (`tests/test_rules.py`, 25 cases, done in Group 4)
 - [x] Eval runner as parametrized pytest cases plus a standalone report (`tests/test_eval.py`, `evals/run_eval.py`)
-- [x] Confirm 100 percent of known verdicts reproduce (23/23, $0 to run)
+- [x] Confirm 100 percent of known verdicts reproduce (52/52, $0 to run)
 - [ ] Manual extraction eval: run a handful of real bottle photos through the live model, record verdicts + cost (needs real label photos)
 
 ### 10. Audit gate (before delivery)

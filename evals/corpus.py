@@ -59,6 +59,9 @@ _WARNING_NO_SENTENCE_2 = CANONICAL.split(" (2)")[0]
 _WARNING_ALTERED = CANONICAL.replace("health problems.", "health issues.")
 _WARNING_EXTRA_SPACES = "  " + CANONICAL.replace(" ", "  ")
 _WARNING_GARBLED = "G0VERNMENT W@RN1NG (1) Acc0rding to the Surge0n Genera1 ... [blurry]"
+_WARNING_LOWERCASE = CANONICAL.lower()
+_WARNING_NO_COLON = CANONICAL.replace("GOVERNMENT WARNING:", "GOVERNMENT WARNING")
+_WARNING_NO_SENTENCE_1 = "GOVERNMENT WARNING: (2)" + CANONICAL.split(" (2)")[1]
 
 
 CASES = [
@@ -232,5 +235,222 @@ CASES = [
         _label(net_contents="800 mL", class_type="Mystery Elixir"),
         FAIL,
         {"Net contents": FAIL, "Class/type": REVIEW},
+    ),
+
+    # === Expansion to ~50 cases ===
+
+    # --- More compliant spirit types and valid formats (PASS) ---
+    EvalCase(
+        "compliant-rum-700", "compliant",
+        "Aged Rum at 700 mL, an authorized 2020 standard of fill.",
+        _label(class_type="Aged Rum", net_contents="700 mL"),
+        PASS,
+        {"Net contents": PASS, "Class/type": PASS},
+    ),
+    EvalCase(
+        "compliant-tequila-1L", "compliant",
+        "Tequila at 1.0 L.",
+        _label(class_type="Tequila", net_contents="1.0 L"),
+        PASS,
+    ),
+    EvalCase(
+        "compliant-rye-375", "compliant",
+        "Straight Rye Whiskey at 375 mL.",
+        _label(class_type="Straight Rye Whiskey", net_contents="375 mL"),
+        PASS,
+    ),
+    EvalCase(
+        "compliant-scotch-whisky-spelling", "compliant",
+        "Single Malt Scotch Whisky (the 'whisky' spelling is recognized).",
+        _label(class_type="Single Malt Scotch Whisky"),
+        PASS,
+        {"Class/type": PASS},
+    ),
+    EvalCase(
+        "compliant-net-1800", "compliant",
+        "1.8 L, an authorized January 2025 standard of fill.",
+        _label(net_contents="1.8 L"),
+        PASS,
+        {"Net contents": PASS},
+    ),
+    EvalCase(
+        "compliant-net-centiliters", "compliant",
+        "Net contents stated in centiliters (70 cl = 700 mL).",
+        _label(net_contents="70 cl"),
+        PASS,
+        {"Net contents": PASS},
+    ),
+    EvalCase(
+        "compliant-abv-percent-spelled", "compliant",
+        "Alcohol stated as '40 percent alcohol by volume' (word form).",
+        _label(alcohol_content="40 percent alcohol by volume"),
+        PASS,
+        {"Alcohol content": PASS},
+    ),
+    EvalCase(
+        "compliant-abv-decimal", "compliant",
+        "Decimal ABV value, 43.5% Alc./Vol.",
+        _label(alcohol_content="43.5% Alc./Vol."),
+        PASS,
+        {"Alcohol content": PASS},
+    ),
+
+    # --- More standards of fill (27 CFR 5.203) ---
+    EvalCase(
+        "fill-offlist-400ml", "fill",
+        "400 mL is not an authorized standard of fill.",
+        _label(net_contents="400 mL"),
+        FAIL,
+        {"Net contents": FAIL},
+    ),
+    EvalCase(
+        "fill-offlist-1500ml", "fill",
+        "1.5 L is not an authorized standard of fill.",
+        _label(net_contents="1.5 L"),
+        FAIL,
+        {"Net contents": FAIL},
+    ),
+    EvalCase(
+        "fill-offlist-650ml", "fill",
+        "650 mL is not an authorized standard of fill.",
+        _label(net_contents="650 mL"),
+        FAIL,
+        {"Net contents": FAIL},
+    ),
+    EvalCase(
+        "fill-pass-570ml", "fill",
+        "570 mL is an authorized (less common) size.",
+        _label(net_contents="570 mL"),
+        PASS,
+        {"Net contents": PASS},
+    ),
+    EvalCase(
+        "fill-pass-945ml", "fill",
+        "945 mL is an authorized size.",
+        _label(net_contents="945 mL"),
+        PASS,
+        {"Net contents": PASS},
+    ),
+    EvalCase(
+        "fill-nonmetric-only", "fill",
+        "Only US customary units given (25.4 oz), no metric volume to validate -> review.",
+        _label(net_contents="25.4 oz"),
+        REVIEW,
+        {"Net contents": REVIEW},
+    ),
+
+    # --- More alcohol content (27 CFR 5.65) ---
+    EvalCase(
+        "abv-words-only", "abv",
+        "'cask strength' with no percentage or proof -> review.",
+        _label(alcohol_content="cask strength"),
+        REVIEW,
+        {"Alcohol content": REVIEW},
+    ),
+    EvalCase(
+        "abv-alcvol-no-number", "abv",
+        "'alcohol by volume' with no number -> cannot confirm -> review.",
+        _label(alcohol_content="alcohol by volume"),
+        REVIEW,
+        {"Alcohol content": REVIEW},
+    ),
+    EvalCase(
+        "abv-proof-only-151", "abv",
+        "'151 Proof' alone; percent by volume is mandatory.",
+        _label(alcohol_content="151 Proof"),
+        FAIL,
+        {"Alcohol content": FAIL},
+    ),
+    EvalCase(
+        "abv-abbreviation-only", "abv",
+        "'40% ABV' uses the abbreviation, not explicit 'alc/vol' -> review (known limitation).",
+        _label(alcohol_content="40% ABV"),
+        REVIEW,
+        {"Alcohol content": REVIEW},
+    ),
+
+    # --- More class/type (27 CFR 5.141-5.143) ---
+    EvalCase(
+        "classtype-aquavit", "classtype",
+        "Aquavit is a recognized designation.",
+        _label(class_type="Aquavit"),
+        PASS,
+        {"Class/type": PASS},
+    ),
+    EvalCase(
+        "classtype-cordial", "classtype",
+        "Cherry Cordial; 'cordial' is recognized.",
+        _label(class_type="Cherry Cordial"),
+        PASS,
+        {"Class/type": PASS},
+    ),
+    EvalCase(
+        "classtype-unrecognized-2", "classtype",
+        "'Sparkle Juice' is not a standard-of-identity term -> review.",
+        _label(class_type="Sparkle Juice"),
+        REVIEW,
+        {"Class/type": REVIEW},
+    ),
+
+    # --- More mandatory presence (27 CFR 5.63) ---
+    EvalCase(
+        "presence-missing-alcohol", "presence",
+        "Alcohol content missing entirely -> a mandatory field is absent.",
+        _label(alcohol_content=None),
+        FAIL,
+        {"Mandatory fields": FAIL},
+    ),
+    EvalCase(
+        "presence-missing-classtype-legible", "presence",
+        "Class/type missing on a clearly readable label -> fail (not a read error).",
+        _label(class_type=None),
+        FAIL,
+        {"Mandatory fields": FAIL},
+    ),
+    EvalCase(
+        "presence-missing-name-address", "presence",
+        "Name and address missing though a brand name is present -> still a missing mandatory field.",
+        _label(name_and_address=None),
+        FAIL,
+        {"Mandatory fields": FAIL},
+    ),
+
+    # --- More government warning (27 CFR 16.21 / 16.22) ---
+    EvalCase(
+        "warning-missing-sentence-1", "warning",
+        "The first required sentence (pregnancy) is dropped.",
+        _label(government_warning=_WARNING_NO_SENTENCE_1),
+        FAIL,
+        {"Government warning": FAIL},
+    ),
+    EvalCase(
+        "warning-all-lowercase", "warning",
+        "Entire warning lowercased, so 'GOVERNMENT WARNING' is not in capitals.",
+        _label(government_warning=_WARNING_LOWERCASE),
+        FAIL,
+        {"Government warning": FAIL},
+    ),
+    EvalCase(
+        "warning-missing-colon", "warning",
+        "Colon after 'GOVERNMENT WARNING' removed -> not verbatim.",
+        _label(government_warning=_WARNING_NO_COLON),
+        FAIL,
+        {"Government warning": FAIL},
+    ),
+
+    # --- More aggregation ---
+    EvalCase(
+        "review-only-two-fields", "aggregation",
+        "Two independent review triggers (unrecognized class + ABV abbreviation), no FAIL -> review.",
+        _label(class_type="Sparkle Juice", alcohol_content="40% ABV"),
+        REVIEW,
+        {"Class/type": REVIEW, "Alcohol content": REVIEW},
+    ),
+    EvalCase(
+        "two-fails", "aggregation",
+        "A lowercased warning (FAIL) plus an illegal fill size (FAIL).",
+        _label(government_warning=_WARNING_LOWERCASE, net_contents="800 mL"),
+        FAIL,
+        {"Government warning": FAIL, "Net contents": FAIL},
     ),
 ]

@@ -1,6 +1,6 @@
 {
-  "total": 23,
-  "passed": 23,
+  "total": 52,
+  "passed": 52,
   "accuracy_pct": 100.0,
   "cases": [
     {
@@ -205,6 +205,267 @@
       "id": "multi-fail-beats-review",
       "category": "aggregation",
       "description": "An illegal fill size (FAIL) plus an unrecognized class/type (REVIEW); FAIL wins.",
+      "expected_overall": "FAIL",
+      "got_overall": "FAIL",
+      "field_mismatches": {},
+      "passed": true
+    },
+    {
+      "id": "compliant-rum-700",
+      "category": "compliant",
+      "description": "Aged Rum at 700 mL, an authorized 2020 standard of fill.",
+      "expected_overall": "PASS",
+      "got_overall": "PASS",
+      "field_mismatches": {},
+      "passed": true
+    },
+    {
+      "id": "compliant-tequila-1L",
+      "category": "compliant",
+      "description": "Tequila at 1.0 L.",
+      "expected_overall": "PASS",
+      "got_overall": "PASS",
+      "field_mismatches": {},
+      "passed": true
+    },
+    {
+      "id": "compliant-rye-375",
+      "category": "compliant",
+      "description": "Straight Rye Whiskey at 375 mL.",
+      "expected_overall": "PASS",
+      "got_overall": "PASS",
+      "field_mismatches": {},
+      "passed": true
+    },
+    {
+      "id": "compliant-scotch-whisky-spelling",
+      "category": "compliant",
+      "description": "Single Malt Scotch Whisky (the 'whisky' spelling is recognized).",
+      "expected_overall": "PASS",
+      "got_overall": "PASS",
+      "field_mismatches": {},
+      "passed": true
+    },
+    {
+      "id": "compliant-net-1800",
+      "category": "compliant",
+      "description": "1.8 L, an authorized January 2025 standard of fill.",
+      "expected_overall": "PASS",
+      "got_overall": "PASS",
+      "field_mismatches": {},
+      "passed": true
+    },
+    {
+      "id": "compliant-net-centiliters",
+      "category": "compliant",
+      "description": "Net contents stated in centiliters (70 cl = 700 mL).",
+      "expected_overall": "PASS",
+      "got_overall": "PASS",
+      "field_mismatches": {},
+      "passed": true
+    },
+    {
+      "id": "compliant-abv-percent-spelled",
+      "category": "compliant",
+      "description": "Alcohol stated as '40 percent alcohol by volume' (word form).",
+      "expected_overall": "PASS",
+      "got_overall": "PASS",
+      "field_mismatches": {},
+      "passed": true
+    },
+    {
+      "id": "compliant-abv-decimal",
+      "category": "compliant",
+      "description": "Decimal ABV value, 43.5% Alc./Vol.",
+      "expected_overall": "PASS",
+      "got_overall": "PASS",
+      "field_mismatches": {},
+      "passed": true
+    },
+    {
+      "id": "fill-offlist-400ml",
+      "category": "fill",
+      "description": "400 mL is not an authorized standard of fill.",
+      "expected_overall": "FAIL",
+      "got_overall": "FAIL",
+      "field_mismatches": {},
+      "passed": true
+    },
+    {
+      "id": "fill-offlist-1500ml",
+      "category": "fill",
+      "description": "1.5 L is not an authorized standard of fill.",
+      "expected_overall": "FAIL",
+      "got_overall": "FAIL",
+      "field_mismatches": {},
+      "passed": true
+    },
+    {
+      "id": "fill-offlist-650ml",
+      "category": "fill",
+      "description": "650 mL is not an authorized standard of fill.",
+      "expected_overall": "FAIL",
+      "got_overall": "FAIL",
+      "field_mismatches": {},
+      "passed": true
+    },
+    {
+      "id": "fill-pass-570ml",
+      "category": "fill",
+      "description": "570 mL is an authorized (less common) size.",
+      "expected_overall": "PASS",
+      "got_overall": "PASS",
+      "field_mismatches": {},
+      "passed": true
+    },
+    {
+      "id": "fill-pass-945ml",
+      "category": "fill",
+      "description": "945 mL is an authorized size.",
+      "expected_overall": "PASS",
+      "got_overall": "PASS",
+      "field_mismatches": {},
+      "passed": true
+    },
+    {
+      "id": "fill-nonmetric-only",
+      "category": "fill",
+      "description": "Only US customary units given (25.4 oz), no metric volume to validate -> review.",
+      "expected_overall": "NEEDS REVIEW",
+      "got_overall": "NEEDS REVIEW",
+      "field_mismatches": {},
+      "passed": true
+    },
+    {
+      "id": "abv-words-only",
+      "category": "abv",
+      "description": "'cask strength' with no percentage or proof -> review.",
+      "expected_overall": "NEEDS REVIEW",
+      "got_overall": "NEEDS REVIEW",
+      "field_mismatches": {},
+      "passed": true
+    },
+    {
+      "id": "abv-alcvol-no-number",
+      "category": "abv",
+      "description": "'alcohol by volume' with no number -> cannot confirm -> review.",
+      "expected_overall": "NEEDS REVIEW",
+      "got_overall": "NEEDS REVIEW",
+      "field_mismatches": {},
+      "passed": true
+    },
+    {
+      "id": "abv-proof-only-151",
+      "category": "abv",
+      "description": "'151 Proof' alone; percent by volume is mandatory.",
+      "expected_overall": "FAIL",
+      "got_overall": "FAIL",
+      "field_mismatches": {},
+      "passed": true
+    },
+    {
+      "id": "abv-abbreviation-only",
+      "category": "abv",
+      "description": "'40% ABV' uses the abbreviation, not explicit 'alc/vol' -> review (known limitation).",
+      "expected_overall": "NEEDS REVIEW",
+      "got_overall": "NEEDS REVIEW",
+      "field_mismatches": {},
+      "passed": true
+    },
+    {
+      "id": "classtype-aquavit",
+      "category": "classtype",
+      "description": "Aquavit is a recognized designation.",
+      "expected_overall": "PASS",
+      "got_overall": "PASS",
+      "field_mismatches": {},
+      "passed": true
+    },
+    {
+      "id": "classtype-cordial",
+      "category": "classtype",
+      "description": "Cherry Cordial; 'cordial' is recognized.",
+      "expected_overall": "PASS",
+      "got_overall": "PASS",
+      "field_mismatches": {},
+      "passed": true
+    },
+    {
+      "id": "classtype-unrecognized-2",
+      "category": "classtype",
+      "description": "'Sparkle Juice' is not a standard-of-identity term -> review.",
+      "expected_overall": "NEEDS REVIEW",
+      "got_overall": "NEEDS REVIEW",
+      "field_mismatches": {},
+      "passed": true
+    },
+    {
+      "id": "presence-missing-alcohol",
+      "category": "presence",
+      "description": "Alcohol content missing entirely -> a mandatory field is absent.",
+      "expected_overall": "FAIL",
+      "got_overall": "FAIL",
+      "field_mismatches": {},
+      "passed": true
+    },
+    {
+      "id": "presence-missing-classtype-legible",
+      "category": "presence",
+      "description": "Class/type missing on a clearly readable label -> fail (not a read error).",
+      "expected_overall": "FAIL",
+      "got_overall": "FAIL",
+      "field_mismatches": {},
+      "passed": true
+    },
+    {
+      "id": "presence-missing-name-address",
+      "category": "presence",
+      "description": "Name and address missing though a brand name is present -> still a missing mandatory field.",
+      "expected_overall": "FAIL",
+      "got_overall": "FAIL",
+      "field_mismatches": {},
+      "passed": true
+    },
+    {
+      "id": "warning-missing-sentence-1",
+      "category": "warning",
+      "description": "The first required sentence (pregnancy) is dropped.",
+      "expected_overall": "FAIL",
+      "got_overall": "FAIL",
+      "field_mismatches": {},
+      "passed": true
+    },
+    {
+      "id": "warning-all-lowercase",
+      "category": "warning",
+      "description": "Entire warning lowercased, so 'GOVERNMENT WARNING' is not in capitals.",
+      "expected_overall": "FAIL",
+      "got_overall": "FAIL",
+      "field_mismatches": {},
+      "passed": true
+    },
+    {
+      "id": "warning-missing-colon",
+      "category": "warning",
+      "description": "Colon after 'GOVERNMENT WARNING' removed -> not verbatim.",
+      "expected_overall": "FAIL",
+      "got_overall": "FAIL",
+      "field_mismatches": {},
+      "passed": true
+    },
+    {
+      "id": "review-only-two-fields",
+      "category": "aggregation",
+      "description": "Two independent review triggers (unrecognized class + ABV abbreviation), no FAIL -> review.",
+      "expected_overall": "NEEDS REVIEW",
+      "got_overall": "NEEDS REVIEW",
+      "field_mismatches": {},
+      "passed": true
+    },
+    {
+      "id": "two-fails",
+      "category": "aggregation",
+      "description": "A lowercased warning (FAIL) plus an illegal fill size (FAIL).",
       "expected_overall": "FAIL",
       "got_overall": "FAIL",
       "field_mismatches": {},
