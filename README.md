@@ -61,14 +61,29 @@ Set in `.env` (see `.env.example`):
   model; set to `claude-sonnet-4-6` for higher accuracy at higher cost)
 - `MAX_UPLOAD_MB` (optional, default 10)
 
-## Tests
+## Tests and evaluation
 
 ```bash
-pytest
+pytest                     # full suite: unit tests + the eval corpus
+python -m evals.run_eval   # known-answer eval report (per-case table + accuracy)
 ```
 
-The vision model is mocked in the test suite, so tests are deterministic and
-cost nothing. The rule engine has its own unit tests (`tests/test_rules.py`).
+The vision model is mocked in the test suite, so every test is deterministic and
+costs nothing. Three layers:
+
+- **Rule unit tests** (`tests/test_rules.py`): each rule function in isolation.
+- **Golden set eval** (`evals/`): 52 known-answer "mutant" labels, each a single
+  planted change from a compliant baseline, run through the real rule engine.
+  `run_eval` reproduces 52/52 verdicts at $0 and writes `evals/results.json`.
+- **App tests** (`tests/test_app.py`): routes, upload validation, and rendering.
+
+A regression is caught two ways. A GitHub Actions workflow runs the suite and the
+eval on every pull request and push to main (`.github/workflows/ci.yml`), and a
+local pre-push hook (`.githooks/pre-push`, activate with
+`git config core.hooksPath .githooks`) runs the suite before any push. Both are
+keyless and free. The deterministic gate is held to 100 percent, no regressions;
+the noisier extraction accuracy (model reading real photos) is a separate manual
+check by design.
 
 ## Cost and efficiency
 
@@ -87,6 +102,8 @@ fraction of a cent per label.
 - `docs/TESTING_STRATEGY.md` - test plan and coverage
 - `docs/SECURITY_AND_COMPLIANCE.md` - security measures and regulatory awareness
 - `docs/COST_AND_EFFICIENCY.md` - cost methodology
+- `docs/AUDITS.md` - performance, architecture, data freshness, and system compliance audits
+- `evals/README.md` - how the known-answer eval corpus works
 
 ## Scope and assumptions
 
@@ -104,6 +121,6 @@ fraction of a cent per label.
 ## Status
 
 Working core: upload, extraction, the full distilled-spirits rule engine, the
-overall verdict, the optional label-vs-application match check, and
-cost/efficiency reporting. In progress: a public deployment and the curated eval
-label set.
+overall verdict, the optional label-vs-application match check, the 52-case
+golden set eval with a CI gate, and cost/efficiency reporting. In progress: a
+public deployment and a manual extraction eval on real bottle photos.
