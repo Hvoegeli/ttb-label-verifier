@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# Pre-push gate: run the full test suite (unit + deterministic eval) before any
+# push. Blocks the push on failure so a regression never leaves the machine.
+# Free and deterministic: the model is mocked, the eval hits the rule engine only.
+#
+# Activate once with:   git config core.hooksPath .githooks
+# Bypass is intentionally NOT documented here; fix the failure instead of skipping
+# the check (see the project and global CLAUDE.md guidance on safety checks).
+
+set -euo pipefail
+
+echo "pre-push: running test suite..."
+
+# Prefer the project virtualenv's Python if present, else fall back to python3.
+if [ -x ".venv/bin/python" ]; then
+  PY=".venv/bin/python"
+else
+  PY="python3"
+fi
+
+"$PY" -m pytest -q
+
+echo "pre-push: all tests passed."
