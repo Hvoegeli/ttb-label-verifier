@@ -13,8 +13,14 @@
   <input type="hidden" name="beverage" value="{{ beverage }}">
 
   <label class="field">
-    <span class="field-label">Label image</span>
+    <span class="field-label">Front label</span>
     <input type="file" name="image" accept="image/*,.heic,.heif" required>
+  </label>
+
+  <label class="field">
+    <span class="field-label">Back label (optional, recommended)</span>
+    <span class="hint">Bottles usually print the Government Warning, net contents, and bottler address on the back. Add it so every required field can be read.</span>
+    <input type="file" name="image_back" accept="image/*,.heic,.heif">
   </label>
 
   <details class="optional">

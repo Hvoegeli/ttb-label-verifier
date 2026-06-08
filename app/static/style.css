@@ -121,6 +121,14 @@ table.fields th { font-size: 14px; text-transform: uppercase; letter-spacing: 0.
 .advisory ul { margin: 8px 0 0; padding-left: 18px; font-size: 15px; }
 .advisory li { margin-bottom: 6px; }
 
+/* Human-in-the-loop caveat + warning transcription diff */
+.human-note { font-size: 14px; color: var(--muted); background: #f7f8fa; border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; margin: 0 0 16px; }
+.result-image img + img { margin-top: 12px; }
+.warning-diff { background: #fdf4e3; border: 1px solid #e3c766; border-radius: 8px; padding: 14px 16px; margin: 18px 0; }
+.warning-diff h3 { margin: 0 0 6px; font-size: 17px; }
+.warning-diff p { margin: 8px 0; font-size: 15px; }
+.diff-tag { display: inline-block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); background: #ececec; border-radius: 999px; padding: 1px 8px; margin-right: 6px; }
+
 .nav-stats { margin-left: auto; color: #fff; text-decoration: none; font-size: 15px; opacity: 0.9; }
 .nav-stats:hover { text-decoration: underline; }
 

@@ -14,9 +14,13 @@
 <div class="alert info">{{ result.note }}</div>
 {% endif %}
 
+<p class="human-note">This tool reads a photo to assist a human reviewer; it is not a final determination. Reading a real bottle photo, especially the verbatim Government Warning on curved or small print, can misread text, so a person should confirm the result against the physical bottle.</p>
+
 <div class="result-grid">
   <div class="result-image">
-    <img src="data:image/jpeg;base64,{{ image_b64 }}" alt="Uploaded label">
+    {% for p in previews %}
+    <img src="data:image/jpeg;base64,{{ p }}" alt="Uploaded label">
+    {% endfor %}
   </div>
 
   <div class="result-detail">
@@ -65,6 +69,15 @@
         <li><strong>{{ a.field }}</strong> ({{ a.citation }}): {{ a.text }}</li>
         {% endfor %}
       </ul>
+    </div>
+    {% endif %}
+
+    {% if result.warning_diff %}
+    <div class="warning-diff">
+      <h3>Government Warning: what differed</h3>
+      <p class="hint">Reading text off a photo can mis-transcribe small or curved print. Compare against the physical bottle before treating this as a real violation.</p>
+      {% if result.warning_diff.expected %}<p><span class="diff-tag">Statute</span> {{ result.warning_diff.expected }}</p>{% endif %}
+      {% if result.warning_diff.got %}<p><span class="diff-tag">Read from label</span> {{ result.warning_diff.got }}</p>{% endif %}
     </div>
     {% endif %}
 

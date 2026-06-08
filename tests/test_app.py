@@ -85,6 +85,7 @@ def test_verify_extracts_and_shows_fields(monkeypatch):
     assert "PASS" in r.text                # fully compliant fixture -> overall PASS
     assert "27 CFR" in r.text              # CFR citations rendered
     assert "0.0042" in r.text              # per-label cost shown
+    assert "assist a human reviewer" in r.text  # human-in-the-loop caveat shown
 
 
 def test_verify_shows_golden_badge_and_advisory(monkeypatch):
@@ -97,6 +98,36 @@ def test_verify_shows_golden_badge_and_advisory(monkeypatch):
     assert "Golden Rule" in r.text
     assert "Advisory checks" in r.text
     assert "not a pass/fail gate" in r.text
+
+
+def test_verify_accepts_optional_back_label(monkeypatch):
+    # Both faces are sent to the extractor in one call.
+    captured = {}
+
+    def fake(images):
+        captured["images"] = images
+        return _fake_result()
+
+    monkeypatch.setattr(main_module, "extract_fields", fake)
+    files = {
+        "image": ("front.png", _png_bytes(), "image/png"),
+        "image_back": ("back.png", _png_bytes(color=(20, 80, 160)), "image/png"),
+    }
+    r = client.post("/verify", files=files, data={"beverage": "spirits"})
+    assert r.status_code == 200
+    assert isinstance(captured["images"], list) and len(captured["images"]) == 2
+
+
+def test_verify_shows_warning_diff_on_mismatch(monkeypatch):
+    # A non-verbatim warning surfaces the statute-vs-label diff for a human.
+    altered = WARNING_TEXT.replace("health problems.", "health issues.")
+    monkeypatch.setattr(main_module, "extract_fields", lambda imgs: _fake_result(government_warning=altered))
+    files = {"image": ("label.png", _png_bytes(), "image/png")}
+    r = client.post("/verify", files=files, data={"beverage": "spirits"})
+    assert r.status_code == 200
+    assert "FAIL" in r.text
+    assert "what differed" in r.text
+    assert "Read from label" in r.text
 
 
 def test_verify_with_application_shows_match_block(monkeypatch):

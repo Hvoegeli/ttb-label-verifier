@@ -88,43 +88,41 @@ def upload_page(request: Request, beverage: str = "spirits"):
     )
 
 
+async def _validate_and_normalize(image: UploadFile) -> bytes:
+    """Validate one upload (type, size, decodes) and return a clean JPEG.
+
+    Raises ImageValidationError (user-safe message) on any problem. Size is
+    checked from the multipart metadata BEFORE the bytes are read into memory;
+    normalize_to_jpeg adds the byte-length and pixel-dimension defenses.
+    """
+    if not has_allowed_extension(image.filename):
+        raise ImageValidationError(
+            "Unsupported file type. Please upload a JPG, PNG, WebP, or HEIC image."
+        )
+    max_bytes = settings.max_upload_mb * 1024 * 1024
+    if image.size is not None and image.size > max_bytes:
+        raise ImageValidationError(
+            f"Image is larger than the {settings.max_upload_mb} MB limit. Please upload a smaller photo."
+        )
+    raw = await image.read()
+    return normalize_to_jpeg(raw, settings.max_upload_mb)
+
+
 @app.post("/verify", response_class=HTMLResponse)
 async def verify(
     request: Request,
     image: UploadFile = File(...),
+    image_back: UploadFile | None = File(default=None),
     application: str = Form(default=""),
     beverage: str = Form(default="spirits"),
 ):
-    # Friendly early rejection on obviously wrong file types.
-    if not has_allowed_extension(image.filename):
-        return templates.TemplateResponse(
-            request,
-            "upload.html",
-            {
-                "beverage": beverage,
-                "error": "Unsupported file type. Please upload a JPG, PNG, WebP, or HEIC image.",
-            },
-            status_code=400,
-        )
-
-    # Reject an oversized upload using the size the multipart parser already
-    # knows, BEFORE reading the bytes into this process. normalize_to_jpeg keeps
-    # its own byte-length check as defense in depth.
-    max_bytes = settings.max_upload_mb * 1024 * 1024
-    if image.size is not None and image.size > max_bytes:
-        return templates.TemplateResponse(
-            request,
-            "upload.html",
-            {
-                "beverage": beverage,
-                "error": f"Image is larger than the {settings.max_upload_mb} MB limit. Please upload a smaller photo.",
-            },
-            status_code=400,
-        )
-
-    raw = await image.read()
+    # Validate and normalize the front label (required) and the back label
+    # (optional). Real bottles split mandatory fields across both faces, so both
+    # photos go to the model in one call.
     try:
-        jpeg = normalize_to_jpeg(raw, settings.max_upload_mb)
+        jpegs = [await _validate_and_normalize(image)]
+        if image_back is not None and image_back.filename:
+            jpegs.append(await _validate_and_normalize(image_back))
     except ImageValidationError as exc:
         return templates.TemplateResponse(
             request,
@@ -133,14 +131,14 @@ async def verify(
             status_code=400,
         )
 
-    # Show the cleaned image back to the user as a preview.
-    image_b64 = base64.b64encode(jpeg).decode("ascii")
+    # Show the cleaned image(s) back to the user as previews.
+    previews = [base64.b64encode(j).decode("ascii") for j in jpegs]
 
-    # One vision call extracts the fields. Time it so we can show (and prove) the
-    # per-label latency. Rule checks (Task Group 4) are not wired in yet.
+    # One vision call reads the fields across all supplied images. Time it so we
+    # can show (and prove) the per-label latency.
     started = time.perf_counter()
     try:
-        extraction = extract_fields(jpeg)
+        extraction = extract_fields(jpegs)
     except ExtractionError as exc:
         result = {
             "overall": "NEEDS REVIEW",
@@ -153,7 +151,7 @@ async def verify(
         }
         return templates.TemplateResponse(
             request, "result.html",
-            {"result": result, "image_b64": image_b64, "beverage": beverage},
+            {"result": result, "previews": previews, "beverage": beverage},
         )
 
     processing_ms = (time.perf_counter() - started) * 1000
@@ -186,6 +184,19 @@ async def verify(
         if o.detail and o.detail.get("tier2_advisory")
     ]
 
+    # When the warning does not match, surface what the statute expects vs what
+    # was read off the label, so a human can tell a real defect from a photo
+    # mis-transcription (the most common failure on a curved back label).
+    warning_diff = None
+    for o in outcomes:
+        if o.field == "Government warning" and o.status != "PASS" and o.detail:
+            expected = o.detail.get("expected_near") or o.detail.get("expected")
+            got = o.detail.get("got_near") or o.detail.get("got")
+            if expected or got:
+                warning_diff = {"expected": expected, "got": got}
+        if o.field == "Government warning":
+            break
+
     # Optional match check: compare the label against a mock application (JSON).
     match_rows = None
     match_error = None
@@ -217,6 +228,7 @@ async def verify(
         "match": match_rows,
         "match_error": match_error,
         "advisories": advisories or None,
+        "warning_diff": warning_diff,
         "note": note,
         "processing_ms": processing_ms,
         "cost_usd": extraction.cost_usd,
@@ -224,5 +236,5 @@ async def verify(
     return templates.TemplateResponse(
         request,
         "result.html",
-        {"result": result, "image_b64": image_b64, "beverage": beverage},
+        {"result": result, "previews": previews, "beverage": beverage},
     )
