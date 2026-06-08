@@ -40,7 +40,7 @@
 
     <h2>Label vs Law</h2>
     {% if result.fields %}
-    <p class="muted legend">Each row below is a <span class="badge-golden">Golden Rule</span>: a mandatory, image provable check. Any single FAIL fails the whole label.</p>
+    <p class="muted legend">A <span class="badge-golden">Golden Rule</span> is a mandatory, image provable check; any single FAIL fails the whole label. An <span class="badge-advisory">Advisory</span> check informs a human and never changes the verdict.</p>
     <table class="fields">
       <thead>
         <tr><th>Field</th><th>Status</th><th>Reason</th><th>Citation</th></tr>
@@ -48,7 +48,7 @@
       <tbody>
         {% for f in result.fields %}
         <tr class="row-{{ f.status|lower|replace(' ', '-') }}">
-          <td>{{ f.name }}{% if f.golden %} <span class="badge-golden" title="Mandatory hard gate">Golden Rule</span>{% endif %}</td>
+          <td>{{ f.name }}{% if f.golden %} <span class="badge-golden" title="Mandatory hard gate">Golden Rule</span>{% else %} <span class="badge-advisory" title="Informational; does not change the verdict">Advisory</span>{% endif %}</td>
           <td>{{ f.status }}</td>
           <td>{{ f.reason }}</td>
           <td>{{ f.citation }}</td>

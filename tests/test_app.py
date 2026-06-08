@@ -84,7 +84,7 @@ def test_upload_page_has_loading_indicator():
 
 def test_verify_extracts_and_shows_fields(monkeypatch):
     # Mock the vision call so the test is free and deterministic.
-    monkeypatch.setattr(main_module, "extract_fields", lambda jpeg: _fake_result())
+    monkeypatch.setattr(main_module, "extract_fields", lambda *a, **k: _fake_result())
     files = {"image": ("label.png", _png_bytes(), "image/png")}
     r = client.post("/verify", files=files, data={"beverage": "spirits"})
     assert r.status_code == 200
@@ -98,7 +98,7 @@ def test_verify_extracts_and_shows_fields(monkeypatch):
 def test_verify_shows_golden_badge_and_advisory(monkeypatch):
     # The five mandatory checks render as Golden Rules; the Tier 2 warning note
     # renders as an advisory that is explicitly not a pass/fail gate.
-    monkeypatch.setattr(main_module, "extract_fields", lambda jpeg: _fake_result())
+    monkeypatch.setattr(main_module, "extract_fields", lambda *a, **k: _fake_result())
     files = {"image": ("label.png", _png_bytes(), "image/png")}
     r = client.post("/verify", files=files, data={"beverage": "spirits"})
     assert r.status_code == 200
@@ -111,7 +111,7 @@ def test_verify_accepts_optional_back_label(monkeypatch):
     # Both faces are sent to the extractor in one call.
     captured = {}
 
-    def fake(images):
+    def fake(images, beverage='spirits'):
         captured["images"] = images
         return _fake_result()
 
@@ -128,7 +128,7 @@ def test_verify_accepts_optional_back_label(monkeypatch):
 def test_verify_shows_warning_diff_on_mismatch(monkeypatch):
     # A non-verbatim warning surfaces the statute-vs-label diff for a human.
     altered = WARNING_TEXT.replace("health problems.", "health issues.")
-    monkeypatch.setattr(main_module, "extract_fields", lambda imgs: _fake_result(government_warning=altered))
+    monkeypatch.setattr(main_module, "extract_fields", lambda *a, **k: _fake_result(government_warning=altered))
     files = {"image": ("label.png", _png_bytes(), "image/png")}
     r = client.post("/verify", files=files, data={"beverage": "spirits"})
     assert r.status_code == 200
@@ -138,7 +138,7 @@ def test_verify_shows_warning_diff_on_mismatch(monkeypatch):
 
 
 def test_verify_with_application_shows_match_block(monkeypatch):
-    monkeypatch.setattr(main_module, "extract_fields", lambda jpeg: _fake_result())
+    monkeypatch.setattr(main_module, "extract_fields", lambda *a, **k: _fake_result())
     application = '{"brand_name": "Old Tom Distillery", "alcohol_content": "40% Alc/Vol"}'
     files = {"image": ("label.png", _png_bytes(), "image/png")}
     r = client.post("/verify", files=files, data={"beverage": "spirits", "application": application})
@@ -149,7 +149,7 @@ def test_verify_with_application_shows_match_block(monkeypatch):
 
 
 def test_verify_with_bad_application_json_is_graceful(monkeypatch):
-    monkeypatch.setattr(main_module, "extract_fields", lambda jpeg: _fake_result())
+    monkeypatch.setattr(main_module, "extract_fields", lambda *a, **k: _fake_result())
     files = {"image": ("label.png", _png_bytes(), "image/png")}
     r = client.post("/verify", files=files, data={"beverage": "spirits", "application": "{not valid json"})
     assert r.status_code == 200
@@ -159,7 +159,7 @@ def test_verify_with_bad_application_json_is_graceful(monkeypatch):
 
 def test_verify_illegible_routes_to_review(monkeypatch):
     monkeypatch.setattr(
-        main_module, "extract_fields", lambda jpeg: _fake_result(overall_legible=False)
+        main_module, "extract_fields", lambda *a, **k: _fake_result(overall_legible=False)
     )
     files = {"image": ("label.png", _png_bytes(), "image/png")}
     r = client.post("/verify", files=files, data={"beverage": "spirits"})
@@ -168,7 +168,7 @@ def test_verify_illegible_routes_to_review(monkeypatch):
 
 
 def test_verify_extraction_error_routes_to_review(monkeypatch):
-    def boom(jpeg):
+    def boom(*a, **k):
         raise ExtractionError("The label-reading service was unavailable. Please try again.")
 
     monkeypatch.setattr(main_module, "extract_fields", boom)
@@ -234,7 +234,7 @@ def test_stats_empty_before_any_verification():
 
 
 def test_stats_records_and_aggregates(monkeypatch):
-    monkeypatch.setattr(main_module, "extract_fields", lambda jpeg: _fake_result())
+    monkeypatch.setattr(main_module, "extract_fields", lambda *a, **k: _fake_result())
     files = {"image": ("label.png", _png_bytes(), "image/png")}
     client.post("/verify", files=files, data={"beverage": "spirits"})
 

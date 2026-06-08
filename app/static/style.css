@@ -115,6 +115,12 @@ table.fields th { font-size: 14px; text-transform: uppercase; letter-spacing: 0.
   font-size: 11px; font-weight: 700; text-transform: uppercase;
   letter-spacing: 0.04em; padding: 1px 8px; vertical-align: middle;
 }
+.badge-advisory {
+  display: inline-block; background: #eef0f3; color: #555;
+  border: 1px solid var(--line); border-radius: 999px;
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.04em; padding: 1px 8px; vertical-align: middle;
+}
 .advisory { background: #f7f8fa; border: 1px solid var(--line); border-left: 4px solid #b9cdec; border-radius: 8px; padding: 14px 16px; margin: 18px 0; }
 .advisory h3 { margin: 0 0 6px; font-size: 17px; }
 .advisory-tag { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); background: #ececec; border-radius: 999px; padding: 1px 8px; vertical-align: middle; }

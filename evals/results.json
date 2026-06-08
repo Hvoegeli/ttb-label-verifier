@@ -1,6 +1,6 @@
 {
-  "total": 53,
-  "passed": 53,
+  "total": 71,
+  "passed": 71,
   "accuracy_pct": 100.0,
   "cases": [
     {
@@ -477,6 +477,168 @@
       "description": "A lowercased warning (FAIL) plus an illegal fill size (FAIL).",
       "expected_overall": "FAIL",
       "got_overall": "FAIL",
+      "field_mismatches": {},
+      "passed": true
+    },
+    {
+      "id": "wine-compliant-baseline",
+      "category": "wine",
+      "description": "A correct Napa Cabernet with appellation, vintage, and sulfite declaration.",
+      "expected_overall": "PASS",
+      "got_overall": "PASS",
+      "field_mismatches": {},
+      "passed": true
+    },
+    {
+      "id": "wine-table-no-numeric-abv",
+      "category": "wine",
+      "description": "Red table wine (14% or less) may omit the numeric percentage.",
+      "expected_overall": "PASS",
+      "got_overall": "PASS",
+      "field_mismatches": {},
+      "passed": true
+    },
+    {
+      "id": "wine-no-abv-not-table",
+      "category": "wine",
+      "description": "A varietal wine with no alcohol statement and no table/light designation.",
+      "expected_overall": "FAIL",
+      "got_overall": "FAIL",
+      "field_mismatches": {},
+      "passed": true
+    },
+    {
+      "id": "wine-offlist-fill-900",
+      "category": "wine",
+      "description": "900 mL is authorized for spirits but NOT a wine standard of fill.",
+      "expected_overall": "FAIL",
+      "got_overall": "FAIL",
+      "field_mismatches": {},
+      "passed": true
+    },
+    {
+      "id": "wine-fill-2250",
+      "category": "wine",
+      "description": "2.25 L is an authorized wine size (January 2025 addition).",
+      "expected_overall": "PASS",
+      "got_overall": "PASS",
+      "field_mismatches": {},
+      "passed": true
+    },
+    {
+      "id": "wine-appellation-required-missing",
+      "category": "wine",
+      "description": "A varietal and vintage are shown, which requires an appellation, but none is present.",
+      "expected_overall": "NEEDS REVIEW",
+      "got_overall": "NEEDS REVIEW",
+      "field_mismatches": {},
+      "passed": true
+    },
+    {
+      "id": "wine-sulfite-missing-advisory",
+      "category": "wine",
+      "description": "No sulfite declaration: advisory only, must NOT change an otherwise-PASS verdict.",
+      "expected_overall": "PASS",
+      "got_overall": "PASS",
+      "field_mismatches": {},
+      "passed": true
+    },
+    {
+      "id": "wine-unrecognized-classtype",
+      "category": "wine",
+      "description": "A fanciful designation with no varietal routes to review.",
+      "expected_overall": "NEEDS REVIEW",
+      "got_overall": "NEEDS REVIEW",
+      "field_mismatches": {},
+      "passed": true
+    },
+    {
+      "id": "wine-missing-net-contents",
+      "category": "wine",
+      "description": "Net contents missing entirely.",
+      "expected_overall": "FAIL",
+      "got_overall": "FAIL",
+      "field_mismatches": {},
+      "passed": true
+    },
+    {
+      "id": "wine-warning-all-caps",
+      "category": "wine",
+      "description": "All-caps warning is compliant for wine too (shared Part 16 rule).",
+      "expected_overall": "PASS",
+      "got_overall": "PASS",
+      "field_mismatches": {},
+      "passed": true
+    },
+    {
+      "id": "beer-compliant-baseline",
+      "category": "beer",
+      "description": "A correct IPA in a 12 fl oz can.",
+      "expected_overall": "PASS",
+      "got_overall": "PASS",
+      "field_mismatches": {},
+      "passed": true
+    },
+    {
+      "id": "beer-no-abv-ordinary",
+      "category": "beer",
+      "description": "An ordinary beer may omit alcohol content (optional federally).",
+      "expected_overall": "PASS",
+      "got_overall": "PASS",
+      "field_mismatches": {},
+      "passed": true
+    },
+    {
+      "id": "beer-fmb-requires-abv",
+      "category": "beer",
+      "description": "A flavored malt beverage with no alcohol statement fails.",
+      "expected_overall": "FAIL",
+      "got_overall": "FAIL",
+      "field_mismatches": {},
+      "passed": true
+    },
+    {
+      "id": "beer-abv-abbreviation",
+      "category": "beer",
+      "description": "'5% ABV' uses an unauthorized abbreviation and routes to review.",
+      "expected_overall": "NEEDS REVIEW",
+      "got_overall": "NEEDS REVIEW",
+      "field_mismatches": {},
+      "passed": true
+    },
+    {
+      "id": "beer-no-standard-of-fill",
+      "category": "beer",
+      "description": "A 40 fl oz malt liquor: beer has no standards of fill, so an unusual size still passes.",
+      "expected_overall": "PASS",
+      "got_overall": "PASS",
+      "field_mismatches": {},
+      "passed": true
+    },
+    {
+      "id": "beer-unrecognized-classtype",
+      "category": "beer",
+      "description": "A non-beer designation with no statement of composition routes to review.",
+      "expected_overall": "NEEDS REVIEW",
+      "got_overall": "NEEDS REVIEW",
+      "field_mismatches": {},
+      "passed": true
+    },
+    {
+      "id": "beer-missing-warning",
+      "category": "beer",
+      "description": "No Government Warning on an otherwise-fine beer.",
+      "expected_overall": "FAIL",
+      "got_overall": "FAIL",
+      "field_mismatches": {},
+      "passed": true
+    },
+    {
+      "id": "beer-lager-compliant",
+      "category": "beer",
+      "description": "A plain lager with a proper alc/vol statement.",
+      "expected_overall": "PASS",
+      "got_overall": "PASS",
       "field_mismatches": {},
       "passed": true
     }

@@ -1,25 +1,33 @@
 # TTB Alcohol Label Verification (Prototype)
 
-A web prototype that verifies U.S. distilled spirits labels against federal TTB
-rules. An agent uploads a photo of a label; one Claude vision call reads the
+A web prototype that verifies U.S. alcohol beverage labels against federal TTB
+rules. An agent picks a beverage type (distilled spirits, wine, or malt
+beverage), uploads a photo of the label; one Claude vision call reads the
 regulated fields off the image; a deterministic Python rule engine checks those
-fields against 27 CFR Parts 5 and 16; and the app returns a PASS / FAIL /
-NEEDS REVIEW verdict with a plain reason and a CFR citation for every field.
+fields against the right regulations (27 CFR Part 5 for spirits, Part 4 for wine,
+Part 7 for malt beverages, and Part 16 for the health warning); and the app
+returns a PASS / FAIL / NEEDS REVIEW verdict with a plain reason and a CFR
+citation for every field.
 
 Built as a take-home for a U.S. Treasury interview. Not an official TTB system;
 results assist a human reviewer and are not final determinations.
 
 ## What it does
 
-- Reads a label image (JPG, PNG, WebP, or HEIC) and extracts the regulated fields.
-- Checks compliance with the in-force rules:
-  - Government Warning present and verbatim, "GOVERNMENT WARNING" in capitals (27 CFR 16.21 / 16.22)
+- Reads a label image (JPG, PNG, WebP, or HEIC), front and optional back, and
+  extracts the regulated fields.
+- Runs the rule set for the chosen beverage. For distilled spirits, the in-force
+  checks are:
+  - Government Warning present with the required wording, "GOVERNMENT WARNING" in capitals (27 CFR 16.21 / 16.22)
   - Net contents is an authorized standard of fill (27 CFR 5.203)
   - Alcohol content stated as percent alcohol by volume; proof optional (27 CFR 5.65)
   - Class/type is a recognized designation (27 CFR 5.141-5.143)
   - All mandatory elements present (27 CFR 5.63)
+  - Wine (Part 4) and malt beverages (Part 7) have their own rule sets with the
+    differences noted under Scope below.
 - Returns an overall verdict (FAIL beats NEEDS REVIEW beats PASS) with per-field
-  reasons and citations.
+  reasons and citations. Mandatory checks are badged Golden Rules; advisory
+  checks (like the wine sulfite declaration) never change the verdict.
 - Measures and reports its own operating cost and latency at `/stats`.
 
 ## Architecture
@@ -107,8 +115,12 @@ fraction of a cent per label.
 
 ## Scope and assumptions
 
-- Distilled spirits only in this build; the rule engine is structured so wine
-  (sulfite declaration) and beer (State-gated ABV) plug in.
+- Three beverage types are supported, each with its own rule set: distilled
+  spirits (27 CFR Part 5), wine (Part 4, including its own standards of fill, the
+  table-wine alcohol exception, the conditional appellation, and an advisory
+  sulfite check), and malt beverages (Part 7, with no standards of fill, optional
+  alcohol content, and the "ABV" abbreviation rule). The Government Warning
+  (Part 16) is shared by all three.
 - Image input only. Physical formatting checks on the warning (type size in mm,
   bold, contrasting background) cannot be proven from a photo and are shown as
   advisory; on true vector PDF artwork they would become hard checks (a
@@ -120,7 +132,9 @@ fraction of a cent per label.
 
 ## Status
 
-Working core: upload, extraction, the full distilled-spirits rule engine, the
-overall verdict, the optional label-vs-application match check, the 52-case
-golden set eval with a CI gate, and cost/efficiency reporting. In progress: a
-public deployment and a manual extraction eval on real bottle photos.
+Working core: upload (front and optional back), extraction, rule engines for all
+three beverages (distilled spirits, wine, malt beverages), the overall verdict,
+the optional label-vs-application match check, a loading indicator during the
+model call, the 71-case golden set eval with a CI gate, and cost/efficiency
+reporting. In progress: a public deployment and a manual extraction eval on real
+bottle photos.

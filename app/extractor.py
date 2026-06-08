@@ -41,43 +41,71 @@ class ExtractionError(Exception):
     """
 
 
-# The single tool the model is forced to call. Its schema IS the output shape.
-LABEL_FIELDS_TOOL = {
-    "name": "record_label_fields",
-    "description": "Record the regulated fields read from the alcohol beverage label image.",
-    "input_schema": {
-        "type": "object",
-        "properties": {
-            "brand_name": {"type": ["string", "null"], "description": "The brand name on the label, or null if absent."},
-            "class_type": {"type": ["string", "null"], "description": "The class/type designation, e.g. 'Kentucky Straight Bourbon Whiskey', or null."},
-            "alcohol_content": {"type": ["string", "null"], "description": "The alcohol content statement exactly as printed, e.g. '45% Alc./Vol. (90 Proof)', or null."},
-            "net_contents": {"type": ["string", "null"], "description": "The net contents exactly as printed, e.g. '750 mL', or null."},
-            "name_and_address": {"type": ["string", "null"], "description": "The bottler/producer/importer name and address, or null."},
-            "government_warning": {
-                "type": ["string", "null"],
-                "description": "Transcribe the GOVERNMENT WARNING statement EXACTLY as printed, character for character, preserving capitalization and punctuation. Do not correct or complete it. Null if no warning appears.",
-            },
-            "warning_legible": {"type": "boolean", "description": "true if the warning text could be read clearly and completely; false if any part was blurry, cut off, or unreadable."},
-            "overall_legible": {"type": "boolean", "description": "true if the label image was clear enough to read the fields confidently; false if it was too blurry, dark, angled, or glare-covered."},
-        },
-        "required": [
-            "brand_name", "class_type", "alcohol_content", "net_contents",
-            "name_and_address", "government_warning", "warning_legible", "overall_legible",
-        ],
+# Base fields read from every beverage label.
+_BASE_PROPERTIES = {
+    "brand_name": {"type": ["string", "null"], "description": "The brand name on the label, or null if absent."},
+    "class_type": {"type": ["string", "null"], "description": "The class/type designation, e.g. 'Kentucky Straight Bourbon Whiskey', 'Cabernet Sauvignon', or 'India Pale Ale'; null if absent."},
+    "alcohol_content": {"type": ["string", "null"], "description": "The alcohol content statement exactly as printed, e.g. '45% Alc./Vol. (90 Proof)' or '13.5% Alc/Vol', or null."},
+    "net_contents": {"type": ["string", "null"], "description": "The net contents exactly as printed, e.g. '750 mL' or '12 FL OZ', or null."},
+    "name_and_address": {"type": ["string", "null"], "description": "The bottler/producer/importer name and address, or null."},
+    "government_warning": {
+        "type": ["string", "null"],
+        "description": "Transcribe the GOVERNMENT WARNING statement EXACTLY as printed, character for character, preserving capitalization and punctuation. Do not correct or complete it. Null if no warning appears.",
+    },
+    "warning_legible": {"type": "boolean", "description": "true if the warning text could be read clearly and completely; false if any part was blurry, cut off, or unreadable."},
+    "overall_legible": {"type": "boolean", "description": "true if the label image was clear enough to read the fields confidently; false if it was too blurry, dark, angled, or glare-covered."},
+}
+_BASE_REQUIRED = list(_BASE_PROPERTIES.keys())
+
+# Extra fields read only for specific beverages.
+_EXTRA_PROPERTIES = {
+    "wine": {
+        "appellation": {"type": ["string", "null"], "description": "The appellation of origin (where the grapes are from), e.g. 'Napa Valley', or null."},
+        "vintage": {"type": ["string", "null"], "description": "The vintage year if shown, e.g. '2019', or null."},
+        "grape_varietal": {"type": ["string", "null"], "description": "The grape varietal if shown, e.g. 'Cabernet Sauvignon', or null."},
+        "sulfite_statement": {"type": ["string", "null"], "description": "The sulfite declaration exactly as printed, e.g. 'Contains Sulfites', or null."},
+    },
+    "beer": {
+        "is_flavored_malt_beverage": {"type": ["boolean", "null"], "description": "true if this is a flavored malt beverage (a hard seltzer or beer with added flavors, e.g. fruit or spirit flavoring), false if an ordinary beer/ale/lager, null if unclear."},
+        "statement_of_composition": {"type": ["string", "null"], "description": "Any statement of composition describing how it was made or flavored, e.g. 'ale with natural flavors', or null."},
     },
 }
 
-_PROMPT = (
-    "You are reading a U.S. distilled spirits label from one or more photos of the "
-    "same bottle (for example the front and the back). Read the printed text across "
-    "all of the images and record each requested field by calling record_label_fields. "
-    "The mandatory information is often split across faces: the government warning, net "
-    "contents, and bottler name and address are usually on the back. "
-    "Transcribe exactly what is printed; do not infer, correct, complete, or judge "
-    "compliance. For the government warning, copy it verbatim, character for character. "
-    "If a field is not present on any image, use null. If the images are too unclear to "
-    "read a field confidently, set the legibility flags to false rather than guessing."
-)
+_BEVERAGE_NOUN = {
+    "spirits": "distilled spirits",
+    "wine": "wine",
+    "beer": "malt beverage (beer)",
+}
+
+
+def _build_tool(beverage: str) -> dict:
+    """Build the forced-output tool schema for a beverage (base fields + extras)."""
+    extra = _EXTRA_PROPERTIES.get(beverage, {})
+    properties = {**_BASE_PROPERTIES, **extra}
+    return {
+        "name": "record_label_fields",
+        "description": "Record the regulated fields read from the alcohol beverage label image.",
+        "input_schema": {
+            "type": "object",
+            "properties": properties,
+            "required": _BASE_REQUIRED + list(extra.keys()),
+        },
+    }
+
+
+def _build_prompt(beverage: str) -> str:
+    noun = _BEVERAGE_NOUN.get(beverage, "alcohol beverage")
+    return (
+        f"You are reading a U.S. {noun} label from one or more photos of the same "
+        "container (for example the front and the back). Read the printed text across "
+        "all of the images and record each requested field by calling record_label_fields. "
+        "The mandatory information is often split across faces: the government warning, net "
+        "contents, and bottler name and address are usually on the back. "
+        "Transcribe exactly what is printed; do not infer, correct, complete, or judge "
+        "compliance. For the government warning, copy it verbatim, character for character. "
+        "If a field is not present on any image, use null. If the images are too unclear to "
+        "read a field confidently, set the legibility flags to false rather than guessing."
+    )
 
 _client: anthropic.Anthropic | None = None
 
@@ -90,13 +118,14 @@ def _get_client() -> anthropic.Anthropic:
     return _client
 
 
-def extract_fields(images: bytes | Sequence[bytes]) -> ExtractionResult:
-    """Send one or more normalized JPEGs of the same bottle to the model and return
-    the structured fields + cost.
+def extract_fields(images: bytes | Sequence[bytes], beverage: str = "spirits") -> ExtractionResult:
+    """Send one or more normalized JPEGs of the same container to the model and
+    return the structured fields + cost.
 
     Accepts a single image (bytes) or several (e.g. the front and back of one
     bottle, whose mandatory fields are split across faces). All images go in one
-    call, so the model reconciles them and we pay for one extraction.
+    call, so the model reconciles them and we pay for one extraction. The schema
+    and prompt adapt to the beverage so wine and beer specific fields are read.
 
     Raises ExtractionError (message safe to display) on any API failure or if the
     model does not return the forced tool call.
@@ -116,15 +145,16 @@ def extract_fields(images: bytes | Sequence[bytes]) -> ExtractionResult:
         for b in images
     ]
 
+    tool = _build_tool(beverage)
     try:
         response = _get_client().messages.create(
             model=settings.claude_model,
             max_tokens=MAX_TOKENS,
-            tools=[LABEL_FIELDS_TOOL],
-            tool_choice={"type": "tool", "name": LABEL_FIELDS_TOOL["name"]},
+            tools=[tool],
+            tool_choice={"type": "tool", "name": tool["name"]},
             messages=[{
                 "role": "user",
-                "content": [*image_blocks, {"type": "text", "text": _PROMPT}],
+                "content": [*image_blocks, {"type": "text", "text": _build_prompt(beverage)}],
             }],
         )
     except anthropic.APIError as exc:

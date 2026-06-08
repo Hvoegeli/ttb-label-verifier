@@ -50,6 +50,7 @@ class EvalCase:
     fields: dict                    # the full label as extracted-field values
     expected_overall: str           # PASS | FAIL | NEEDS REVIEW
     expected_fields: dict = field(default_factory=dict)  # field name -> expected status
+    beverage: str = "spirits"       # which rule set to run (spirits | wine | beer)
 
 
 # Warning mutants are derived from the single canonical text so they can never
@@ -62,6 +63,49 @@ _WARNING_GARBLED = "G0VERNMENT W@RN1NG (1) Acc0rding to the Surge0n Genera1 ... 
 _WARNING_LOWERCASE = CANONICAL.lower()
 _WARNING_NO_COLON = CANONICAL.replace("GOVERNMENT WARNING:", "GOVERNMENT WARNING")
 _WARNING_NO_SENTENCE_1 = "GOVERNMENT WARNING: (2)" + CANONICAL.split(" (2)")[1]
+
+
+# A compliant wine label (27 CFR Part 4) and a compliant malt beverage label
+# (27 CFR Part 7), each the baseline for that beverage's mutant cases.
+WINE_BASELINE = dict(
+    brand_name="STONECREST CELLARS",
+    class_type="Cabernet Sauvignon",
+    alcohol_content="13.5% Alc./Vol.",
+    net_contents="750 mL",
+    name_and_address="Bottled by Stonecrest Cellars, Napa, CA",
+    government_warning=CANONICAL,
+    warning_legible=True,
+    overall_legible=True,
+    appellation="Napa Valley",
+    vintage="2019",
+    grape_varietal="Cabernet Sauvignon",
+    sulfite_statement="Contains Sulfites",
+)
+
+BEER_BASELINE = dict(
+    brand_name="RIVERBED BREWING",
+    class_type="India Pale Ale",
+    alcohol_content="6.5% Alc/Vol",
+    net_contents="12 FL OZ",
+    name_and_address="Brewed by Riverbed Brewing Co., Portland, OR",
+    government_warning=CANONICAL,
+    warning_legible=True,
+    overall_legible=True,
+    is_flavored_malt_beverage=False,
+    statement_of_composition=None,
+)
+
+
+def _wine(**overrides):
+    data = dict(WINE_BASELINE)
+    data.update(overrides)
+    return data
+
+
+def _beer(**overrides):
+    data = dict(BEER_BASELINE)
+    data.update(overrides)
+    return data
 
 
 CASES = [
@@ -459,5 +503,115 @@ CASES = [
         _label(government_warning=_WARNING_LOWERCASE, net_contents="800 mL"),
         FAIL,
         {"Government warning": FAIL, "Net contents": FAIL},
+    ),
+
+    # === Wine (27 CFR Part 4) ===
+    EvalCase(
+        "wine-compliant-baseline", "wine",
+        "A correct Napa Cabernet with appellation, vintage, and sulfite declaration.",
+        _wine(), PASS, {}, "wine",
+    ),
+    EvalCase(
+        "wine-table-no-numeric-abv", "wine",
+        "Red table wine (14% or less) may omit the numeric percentage.",
+        _wine(class_type="Red Table Wine", alcohol_content=None, grape_varietal=None, vintage=None, appellation=None),
+        PASS, {"Alcohol content": PASS}, "wine",
+    ),
+    EvalCase(
+        "wine-no-abv-not-table", "wine",
+        "A varietal wine with no alcohol statement and no table/light designation.",
+        _wine(alcohol_content=None),
+        FAIL, {"Alcohol content": FAIL}, "wine",
+    ),
+    EvalCase(
+        "wine-offlist-fill-900", "wine",
+        "900 mL is authorized for spirits but NOT a wine standard of fill.",
+        _wine(net_contents="900 mL"),
+        FAIL, {"Net contents": FAIL}, "wine",
+    ),
+    EvalCase(
+        "wine-fill-2250", "wine",
+        "2.25 L is an authorized wine size (January 2025 addition).",
+        _wine(net_contents="2.25 L"),
+        PASS, {"Net contents": PASS}, "wine",
+    ),
+    EvalCase(
+        "wine-appellation-required-missing", "wine",
+        "A varietal and vintage are shown, which requires an appellation, but none is present.",
+        _wine(appellation=None),
+        REVIEW, {"Appellation": REVIEW}, "wine",
+    ),
+    EvalCase(
+        "wine-sulfite-missing-advisory", "wine",
+        "No sulfite declaration: advisory only, must NOT change an otherwise-PASS verdict.",
+        _wine(sulfite_statement=None),
+        PASS, {"Sulfite declaration": REVIEW}, "wine",
+    ),
+    EvalCase(
+        "wine-unrecognized-classtype", "wine",
+        "A fanciful designation with no varietal routes to review.",
+        _wine(class_type="Mystery Pour", grape_varietal=None, vintage=None, appellation=None),
+        REVIEW, {"Class/type": REVIEW}, "wine",
+    ),
+    EvalCase(
+        "wine-missing-net-contents", "wine",
+        "Net contents missing entirely.",
+        _wine(net_contents=None),
+        FAIL, {"Mandatory fields": FAIL}, "wine",
+    ),
+    EvalCase(
+        "wine-warning-all-caps", "wine",
+        "All-caps warning is compliant for wine too (shared Part 16 rule).",
+        _wine(government_warning=CANONICAL.upper()),
+        PASS, {"Government warning": PASS}, "wine",
+    ),
+
+    # === Malt beverage / beer (27 CFR Part 7) ===
+    EvalCase(
+        "beer-compliant-baseline", "beer",
+        "A correct IPA in a 12 fl oz can.",
+        _beer(), PASS, {}, "beer",
+    ),
+    EvalCase(
+        "beer-no-abv-ordinary", "beer",
+        "An ordinary beer may omit alcohol content (optional federally).",
+        _beer(alcohol_content=None),
+        PASS, {"Alcohol content": PASS}, "beer",
+    ),
+    EvalCase(
+        "beer-fmb-requires-abv", "beer",
+        "A flavored malt beverage with no alcohol statement fails.",
+        _beer(alcohol_content=None, is_flavored_malt_beverage=True),
+        FAIL, {"Alcohol content": FAIL}, "beer",
+    ),
+    EvalCase(
+        "beer-abv-abbreviation", "beer",
+        "'5% ABV' uses an unauthorized abbreviation and routes to review.",
+        _beer(alcohol_content="5% ABV"),
+        REVIEW, {"Alcohol content": REVIEW}, "beer",
+    ),
+    EvalCase(
+        "beer-no-standard-of-fill", "beer",
+        "A 40 fl oz malt liquor: beer has no standards of fill, so an unusual size still passes.",
+        _beer(class_type="Malt Liquor", net_contents="40 FL OZ"),
+        PASS, {}, "beer",
+    ),
+    EvalCase(
+        "beer-unrecognized-classtype", "beer",
+        "A non-beer designation with no statement of composition routes to review.",
+        _beer(class_type="Fizzy Drink", statement_of_composition=None),
+        REVIEW, {"Class/type": REVIEW}, "beer",
+    ),
+    EvalCase(
+        "beer-missing-warning", "beer",
+        "No Government Warning on an otherwise-fine beer.",
+        _beer(government_warning=None),
+        FAIL, {"Mandatory fields": FAIL, "Government warning": FAIL}, "beer",
+    ),
+    EvalCase(
+        "beer-lager-compliant", "beer",
+        "A plain lager with a proper alc/vol statement.",
+        _beer(class_type="Lager", alcohol_content="4.2% alc/vol"),
+        PASS, {"Class/type": PASS, "Alcohol content": PASS}, "beer",
     ),
 ]

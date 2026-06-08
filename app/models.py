@@ -21,3 +21,15 @@ class ExtractedFields(BaseModel):
     warning_legible: bool = True
     # True if the label overall was clear enough to trust the extraction.
     overall_legible: bool = True
+
+    # Wine-specific (27 CFR Part 4); None for other beverages.
+    appellation: str | None = None        # appellation of origin, e.g. "Napa Valley"
+    vintage: str | None = None            # vintage year if shown
+    grape_varietal: str | None = None     # varietal name, e.g. "Cabernet Sauvignon"
+    sulfite_statement: str | None = None  # e.g. "Contains Sulfites"
+
+    # Malt beverage / beer-specific (27 CFR Part 7); None for other beverages.
+    # True if the label indicates a flavored malt beverage (added nonbeverage
+    # flavors), which makes the alcohol statement mandatory; None if unknown.
+    is_flavored_malt_beverage: bool | None = None
+    statement_of_composition: str | None = None  # §7.147 fallback designation text

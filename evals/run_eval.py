@@ -25,7 +25,7 @@ REPORT_PATH = Path(__file__).parent / "results.json"
 def evaluate_case(case):
     """Run one case through the engine and return a result record."""
     fields = ExtractedFields(**case.fields)
-    outcomes = run_rules(fields)
+    outcomes = run_rules(fields, case.beverage)
     by_field = {o.field: o.status for o in outcomes}
     overall = overall_verdict(outcomes, fields.overall_legible)
 

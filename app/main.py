@@ -36,9 +36,14 @@ templates = Jinja2Templates(directory=BASE_DIR / "templates")
 # shown as "coming soon" to signal the plug-in rule architecture to reviewers.
 BEVERAGES = [
     {"id": "spirits", "name": "Distilled Spirits", "active": True},
-    {"id": "wine", "name": "Wine", "active": False},
-    {"id": "beer", "name": "Malt Beverage / Beer", "active": False},
+    {"id": "wine", "name": "Wine", "active": True},
+    {"id": "beer", "name": "Malt Beverage / Beer", "active": True},
 ]
+VALID_BEVERAGES = {b["id"] for b in BEVERAGES if b["active"]}
+
+
+def _beverage_name(beverage: str) -> str:
+    return next((b["name"] for b in BEVERAGES if b["id"] == beverage), "Alcohol")
 
 
 @app.get("/healthz")
@@ -83,8 +88,10 @@ def landing(request: Request):
 
 @app.get("/upload", response_class=HTMLResponse)
 def upload_page(request: Request, beverage: str = "spirits"):
+    if beverage not in VALID_BEVERAGES:
+        beverage = "spirits"
     return templates.TemplateResponse(
-        request, "upload.html", {"beverage": beverage, "error": None}
+        request, "upload.html", {"beverage": beverage, "beverage_name": _beverage_name(beverage), "error": None}
     )
 
 
@@ -127,18 +134,22 @@ async def verify(
         return templates.TemplateResponse(
             request,
             "upload.html",
-            {"beverage": beverage, "error": str(exc)},
+            {"beverage": beverage, "beverage_name": _beverage_name(beverage), "error": str(exc)},
             status_code=400,
         )
 
     # Show the cleaned image(s) back to the user as previews.
     previews = [base64.b64encode(j).decode("ascii") for j in jpegs]
 
+    # Guard the beverage so an unexpected value falls back to spirits rules.
+    if beverage not in VALID_BEVERAGES:
+        beverage = "spirits"
+
     # One vision call reads the fields across all supplied images. Time it so we
     # can show (and prove) the per-label latency.
     started = time.perf_counter()
     try:
-        extraction = extract_fields(jpegs)
+        extraction = extract_fields(jpegs, beverage)
     except ExtractionError as exc:
         result = {
             "overall": "NEEDS REVIEW",
@@ -172,7 +183,7 @@ async def verify(
         overall = "NEEDS REVIEW"
         note = "The image was not clear enough to read confidently. Please upload a sharper, well-lit, straight-on photo."
     else:
-        outcomes = run_rules(fields)
+        outcomes = run_rules(fields, beverage)
         overall = overall_verdict(outcomes, fields.overall_legible)
         note = None
 
@@ -220,6 +231,13 @@ async def verify(
         "Name and address": fields.name_and_address,
         "Government warning": fields.government_warning,
     }
+    if beverage == "wine":
+        extracted["Appellation"] = fields.appellation
+        extracted["Vintage"] = fields.vintage
+        extracted["Grape varietal"] = fields.grape_varietal
+        extracted["Sulfite statement"] = fields.sulfite_statement
+    elif beverage == "beer" and fields.statement_of_composition:
+        extracted["Statement of composition"] = fields.statement_of_composition
 
     result = {
         "overall": overall,

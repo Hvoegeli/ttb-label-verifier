@@ -15,7 +15,7 @@ from evals.corpus import CASES
 @pytest.mark.parametrize("case", CASES, ids=[c.id for c in CASES])
 def test_known_verdict_reproduces(case):
     fields = ExtractedFields(**case.fields)
-    outcomes = run_rules(fields)
+    outcomes = run_rules(fields, case.beverage)
     by_field = {o.field: o.status for o in outcomes}
 
     overall = overall_verdict(outcomes, fields.overall_legible)
