@@ -5,14 +5,22 @@ Claude model (that arrives in Task Group 3 and will be mocked in CI).
 """
 import io
 
+import pytest
 from fastapi.testclient import TestClient
 from PIL import Image
 
 import app.main as main_module
-from app.extractor import ExtractedFields, ExtractionError
+from app import costs as costs_module
+from app.extractor import ExtractedFields, ExtractionError, ExtractionResult
 from app.main import app
 
 client = TestClient(app)
+
+
+@pytest.fixture(autouse=True)
+def _tmp_metrics(tmp_path, monkeypatch):
+    """Redirect the metrics log to a temp file so tests never write into the repo."""
+    monkeypatch.setattr(costs_module, "METRICS_PATH", tmp_path / "usage.jsonl")
 
 
 def _fake_fields(**overrides):
@@ -29,6 +37,16 @@ def _fake_fields(**overrides):
     )
     base.update(overrides)
     return ExtractedFields(**base)
+
+
+def _fake_result(**overrides):
+    """Wrap fake fields in an ExtractionResult with fixed token usage/cost."""
+    return ExtractionResult(
+        fields=_fake_fields(**overrides),
+        input_tokens=2100,
+        output_tokens=400,
+        cost_usd=0.0042,
+    )
 
 
 def _png_bytes(size=(60, 40), color=(200, 120, 40)):
@@ -58,17 +76,18 @@ def test_upload_page_renders():
 
 def test_verify_extracts_and_shows_fields(monkeypatch):
     # Mock the vision call so the test is free and deterministic.
-    monkeypatch.setattr(main_module, "extract_fields", lambda jpeg: _fake_fields())
+    monkeypatch.setattr(main_module, "extract_fields", lambda jpeg: _fake_result())
     files = {"image": ("label.png", _png_bytes(), "image/png")}
     r = client.post("/verify", files=files, data={"beverage": "spirits"})
     assert r.status_code == 200
     assert "OLD TOM DISTILLERY" in r.text  # extracted field shown
     assert "PENDING" in r.text             # rules not wired yet, but legible
+    assert "0.0042" in r.text              # per-label cost shown
 
 
 def test_verify_illegible_routes_to_review(monkeypatch):
     monkeypatch.setattr(
-        main_module, "extract_fields", lambda jpeg: _fake_fields(overall_legible=False)
+        main_module, "extract_fields", lambda jpeg: _fake_result(overall_legible=False)
     )
     files = {"image": ("label.png", _png_bytes(), "image/png")}
     r = client.post("/verify", files=files, data={"beverage": "spirits"})
@@ -113,3 +132,33 @@ def test_verify_rejects_corrupt_image():
     r = client.post("/verify", files=files, data={"beverage": "spirits"})
     assert r.status_code == 400
     assert "Could not read this file" in r.text
+
+
+def test_cost_usd_matches_published_pricing():
+    # 1M input + 1M output on Haiku = $1.00 + $5.00 = $6.00
+    assert abs(costs_module.cost_usd("claude-haiku-4-5", 1_000_000, 1_000_000) - 6.00) < 1e-9
+    # Sonnet = $3.00 + $15.00 = $18.00
+    assert abs(costs_module.cost_usd("claude-sonnet-4-6", 1_000_000, 1_000_000) - 18.00) < 1e-9
+    # Unknown model contributes no cost rather than crashing.
+    assert costs_module.cost_usd("nope", 1000, 1000) == 0.0
+
+
+def test_stats_empty_before_any_verification():
+    r = client.get("/stats")
+    assert r.status_code == 200
+    assert "No labels have been verified yet" in r.text
+
+
+def test_stats_records_and_aggregates(monkeypatch):
+    monkeypatch.setattr(main_module, "extract_fields", lambda jpeg: _fake_result())
+    files = {"image": ("label.png", _png_bytes(), "image/png")}
+    client.post("/verify", files=files, data={"beverage": "spirits"})
+
+    agg = costs_module.aggregate()
+    assert agg["count"] == 1
+    assert abs(agg["total_cost_usd"] - 0.0042) < 1e-9
+
+    r = client.get("/stats")
+    assert r.status_code == 200
+    assert "labels verified" in r.text
+    assert "cheaper per label" in r.text  # labor comparison rendered

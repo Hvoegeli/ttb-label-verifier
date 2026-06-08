@@ -104,4 +104,14 @@ table.fields th { font-size: 14px; text-transform: uppercase; letter-spacing: 0.
 .row-fail td:nth-child(2) { color: var(--fail); font-weight: 700; }
 .row-needs-review td:nth-child(2) { color: var(--review); font-weight: 700; }
 
+.nav-stats { margin-left: auto; color: #fff; text-decoration: none; font-size: 15px; opacity: 0.9; }
+.nav-stats:hover { text-decoration: underline; }
+
+/* Stats page */
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; margin: 20px 0; }
+.stat { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 18px; display: flex; flex-direction: column; gap: 6px; }
+.stat-num { font-size: 26px; font-weight: 700; color: var(--navy); }
+.stat-lbl { font-size: 14px; color: var(--muted); }
+code { background: #eef0f3; padding: 1px 5px; border-radius: 4px; font-size: 14px; }
+
 .site-footer { border-top: 1px solid var(--line); color: var(--muted); font-size: 14px; padding: 20px 0; }

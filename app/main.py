@@ -19,6 +19,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
+from . import costs
 from .config import settings
 from .extractor import ExtractionError, extract_fields
 from .images import ImageValidationError, has_allowed_extension, normalize_to_jpeg
@@ -42,6 +43,33 @@ BEVERAGES = [
 def healthz():
     """Liveness check. Also the endpoint a keep-alive pinger hits in production."""
     return {"status": "ok"}
+
+
+@app.get("/stats", response_class=HTMLResponse)
+def stats(request: Request, minutes_per_label: float = 7.5, hourly_rate: float = 50.0):
+    """Measured efficiency report. The two assumptions (manual minutes per label and
+    loaded hourly rate) are adjustable via query string so a reviewer can plug in
+    their own figures; the per-label machine cost is real, from logged token usage."""
+    agg = costs.aggregate()
+    manual_cost_per_label = (minutes_per_label / 60.0) * hourly_rate
+    machine_cost_per_label = agg["avg_cost_usd"]
+    savings_per_label = manual_cost_per_label - machine_cost_per_label
+    ratio = (manual_cost_per_label / machine_cost_per_label) if machine_cost_per_label > 0 else None
+    annual_labels = 150_000  # TTB's stated annual application volume
+    context = {
+        "agg": agg,
+        "minutes_per_label": minutes_per_label,
+        "hourly_rate": hourly_rate,
+        "manual_cost_per_label": manual_cost_per_label,
+        "machine_cost_per_label": machine_cost_per_label,
+        "savings_per_label": savings_per_label,
+        "ratio": ratio,
+        "annual_labels": annual_labels,
+        "annual_manual_cost": manual_cost_per_label * annual_labels,
+        "annual_machine_cost": machine_cost_per_label * annual_labels,
+        "annual_savings": savings_per_label * annual_labels,
+    }
+    return templates.TemplateResponse(request, "stats.html", context)
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -110,7 +138,7 @@ async def verify(
     # per-label latency. Rule checks (Task Group 4) are not wired in yet.
     started = time.perf_counter()
     try:
-        fields = extract_fields(jpeg)
+        extraction = extract_fields(jpeg)
     except ExtractionError as exc:
         result = {
             "overall": "NEEDS REVIEW",
@@ -119,6 +147,7 @@ async def verify(
             "match": None,
             "note": f"{exc}",
             "processing_ms": (time.perf_counter() - started) * 1000,
+            "cost_usd": None,
         }
         return templates.TemplateResponse(
             request, "result.html",
@@ -126,6 +155,16 @@ async def verify(
         )
 
     processing_ms = (time.perf_counter() - started) * 1000
+    fields = extraction.fields
+
+    # Record the measured cost + latency for the efficiency report (/stats).
+    costs.record(
+        model=settings.claude_model,
+        input_tokens=extraction.input_tokens,
+        output_tokens=extraction.output_tokens,
+        cost_usd=extraction.cost_usd,
+        latency_ms=processing_ms,
+    )
 
     # Confidence gate: never auto-pass an image we could not read confidently.
     if not fields.overall_legible:
@@ -152,6 +191,7 @@ async def verify(
         "match": None,
         "note": note,
         "processing_ms": processing_ms,
+        "cost_usd": extraction.cost_usd,
     }
     return templates.TemplateResponse(
         request,

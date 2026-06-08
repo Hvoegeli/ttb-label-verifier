@@ -23,6 +23,9 @@ htmlcov/
 uploads/
 tmp/
 
+# Runtime cost/usage metrics (regenerated per run; a sample is documented instead)
+metrics/
+
 # Demo / demo-video scripts are local working docs, never committed
 DEMO-SCRIPT.md
 *DEMO-SCRIPT*.md

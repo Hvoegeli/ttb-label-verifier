@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Cost and efficiency{% endblock %}
+{% block content %}
+<p><a class="back" href="/">&larr; Home</a></p>
+<h1>Cost and efficiency</h1>
+<p class="lead">Measured operating cost of automated label verification. Every figure below comes from logged API token usage, not an estimate.</p>
+
+{% if agg.count == 0 %}
+<div class="alert info">No labels have been verified yet. Run a check, then refresh this page.</div>
+{% else %}
+<div class="stat-grid">
+  <div class="stat"><span class="stat-num">{{ agg.count }}</span><span class="stat-lbl">labels verified</span></div>
+  <div class="stat"><span class="stat-num">${{ "%.4f"|format(agg.total_cost_usd) }}</span><span class="stat-lbl">total API cost</span></div>
+  <div class="stat"><span class="stat-num">${{ "%.5f"|format(agg.avg_cost_usd) }}</span><span class="stat-lbl">avg cost / label</span></div>
+  <div class="stat"><span class="stat-num">{{ "%.1f"|format(agg.avg_latency_ms / 1000) }}s</span><span class="stat-lbl">avg latency</span></div>
+  <div class="stat"><span class="stat-num">{{ "%.1f"|format(agg.p95_latency_ms / 1000) }}s</span><span class="stat-lbl">p95 latency</span></div>
+</div>
+
+<p class="muted">{{ "{:,}".format(agg.total_input_tokens) }} input + {{ "{:,}".format(agg.total_output_tokens) }} output tokens across {{ agg.count }} calls.</p>
+
+<h2>By model</h2>
+<table class="fields">
+  <thead><tr><th>Model</th><th>Calls</th><th>Cost</th></tr></thead>
+  <tbody>
+    {% for model, d in agg.by_model.items() %}
+    <tr><td>{{ model }}</td><td>{{ d.count }}</td><td>${{ "%.4f"|format(d.cost_usd) }}</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<h2>Labor comparison (illustrative)</h2>
+<p class="hint">
+  Adjustable assumptions: a manual review takes <strong>{{ minutes_per_label }} min</strong> at a loaded rate of
+  <strong>${{ "%.0f"|format(hourly_rate) }}/hr</strong>. Change them via
+  <code>?minutes_per_label=NN&amp;hourly_rate=NN</code>. The automated cost is real (logged usage);
+  the manual cost is your assumption.
+</p>
+<table class="fields">
+  <tbody>
+    <tr><td>Manual cost / label</td><td>${{ "%.2f"|format(manual_cost_per_label) }}</td></tr>
+    <tr><td>Automated cost / label</td><td>${{ "%.5f"|format(machine_cost_per_label) }}</td></tr>
+    <tr><td>Saving / label</td><td>${{ "%.2f"|format(savings_per_label) }}</td></tr>
+    {% if ratio %}<tr><td>Cost ratio</td><td>{{ "{:,.0f}".format(ratio) }}x cheaper per label</td></tr>{% endif %}
+  </tbody>
+</table>
+
+<h2>At TTB scale ({{ "{:,}".format(annual_labels) }} applications / year)</h2>
+<table class="fields">
+  <tbody>
+    <tr><td>Manual annual cost</td><td>${{ "{:,.0f}".format(annual_manual_cost) }}</td></tr>
+    <tr><td>Automated annual cost</td><td>${{ "{:,.0f}".format(annual_machine_cost) }}</td></tr>
+    <tr><td>Annual saving (illustrative)</td><td>${{ "{:,.0f}".format(annual_savings) }}</td></tr>
+  </tbody>
+</table>
+<p class="hint">The tool assists agents; it does not replace human judgment. These figures illustrate the routine-matching portion of review using the adjustable assumptions above. See <code>docs/COST_AND_EFFICIENCY.md</code> for methodology.</p>
+{% endif %}
+{% endblock %}

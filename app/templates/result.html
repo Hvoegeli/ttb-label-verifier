@@ -6,7 +6,7 @@
 <div class="verdict verdict-{{ result.overall|lower|replace(' ', '-') }}">
   <span class="verdict-label">{{ result.overall }}</span>
   {% if result.processing_ms is not none %}
-  <span class="verdict-time">verified in {{ '%.1f' % (result.processing_ms / 1000) }}s</span>
+  <span class="verdict-time">verified in {{ '%.1f' % (result.processing_ms / 1000) }}s{% if result.cost_usd is not none %} &middot; cost ${{ '%.4f' % result.cost_usd }}{% endif %}</span>
   {% endif %}
 </div>
 

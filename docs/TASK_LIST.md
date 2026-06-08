@@ -50,6 +50,13 @@ Phased breakdown. Phase 1 is the MVP: a working single label distilled spirits p
 - [ ] Image preprocessing assistance for skew / glare / low light
 - [ ] Soft advisory "horizon" flags for proposed rules (allergen, Alcohol Facts, cancer warning), clearly informational only
 
+### 8b. Cost and efficiency instrumentation (added per reviewer interest)
+- [x] `costs.py`: real per-call cost from logged token usage; dated pricing table
+- [x] Append-only metrics log (`metrics/usage.jsonl`, gitignored); also tracks dev spend vs the $7.60 budget
+- [x] `/stats` page: totals, avg cost/label, latency p95, labor-savings comparison with adjustable assumptions
+- [x] Per-label cost shown on the result page
+- [x] `docs/COST_AND_EFFICIENCY.md` reviewer artifact (methodology + cost-cutting decisions)
+
 ## Phase 3: Final
 
 ### 9. Eval and tests [MVP13]

@@ -10,10 +10,12 @@ We force structured output with a single tool plus tool_choice, so the model mus
 return the fields as a JSON object rather than prose we would have to parse.
 """
 import base64
+from dataclasses import dataclass
 
 import anthropic
 from pydantic import BaseModel
 
+from . import costs
 from .config import settings
 
 # Cap output: the JSON is small, so a low ceiling saves tokens and prevents a
@@ -39,6 +41,16 @@ class ExtractedFields(BaseModel):
     warning_legible: bool = True
     # True if the label overall was clear enough to trust the extraction.
     overall_legible: bool = True
+
+
+@dataclass
+class ExtractionResult:
+    """The extracted fields plus the measured cost of producing them."""
+
+    fields: ExtractedFields
+    input_tokens: int
+    output_tokens: int
+    cost_usd: float
 
 
 class ExtractionError(Exception):
@@ -94,8 +106,8 @@ def _get_client() -> anthropic.Anthropic:
     return _client
 
 
-def extract_fields(jpeg_bytes: bytes) -> ExtractedFields:
-    """Send one normalized JPEG to the model and return the structured fields.
+def extract_fields(jpeg_bytes: bytes) -> ExtractionResult:
+    """Send one normalized JPEG to the model and return the structured fields + cost.
 
     Raises ExtractionError (message safe to display) on any API failure or if the
     model does not return the forced tool call.
@@ -126,6 +138,16 @@ def extract_fields(jpeg_bytes: bytes) -> ExtractedFields:
         raise ExtractionError("The label could not be read into structured fields. Please review by hand.")
 
     try:
-        return ExtractedFields(**tool_use.input)
+        fields = ExtractedFields(**tool_use.input)
     except Exception as exc:  # pydantic validation or unexpected shape
         raise ExtractionError("The label reading came back in an unexpected format. Please review by hand.") from exc
+
+    usage = response.usage
+    input_tokens = getattr(usage, "input_tokens", 0) or 0
+    output_tokens = getattr(usage, "output_tokens", 0) or 0
+    return ExtractionResult(
+        fields=fields,
+        input_tokens=input_tokens,
+        output_tokens=output_tokens,
+        cost_usd=costs.cost_usd(settings.claude_model, input_tokens, output_tokens),
+    )
