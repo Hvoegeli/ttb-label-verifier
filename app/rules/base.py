@@ -20,6 +20,10 @@ class RuleOutcome:
     reason: str         # plain-language explanation
     citation: str       # controlling CFR section
     detail: dict | None = None  # optional extra (diffs, advisory notes, lists)
+    # A Golden Rule is a mandatory, image-provable hard gate: any single FAIL
+    # fails the whole label. Advisory checks (golden=False) inform a human but
+    # never auto-fail. Every mandatory rule in this engine is golden.
+    golden: bool = True
 
     def as_row(self) -> dict:
         """Flatten for template rendering."""
@@ -28,6 +32,7 @@ class RuleOutcome:
             "status": self.status,
             "reason": self.reason,
             "citation": self.citation,
+            "golden": self.golden,
         }
 
 

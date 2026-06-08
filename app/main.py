@@ -178,6 +178,14 @@ async def verify(
         overall = overall_verdict(outcomes, fields.overall_legible)
         note = None
 
+    # Advisory (Tier 2) notes: format/size/placement checks a photo cannot prove.
+    # Surfaced for a human, never a pass/fail gate. Pulled from rule detail.
+    advisories = [
+        {"field": o.field, "text": o.detail["tier2_advisory"], "citation": o.citation}
+        for o in outcomes
+        if o.detail and o.detail.get("tier2_advisory")
+    ]
+
     # Optional match check: compare the label against a mock application (JSON).
     match_rows = None
     match_error = None
@@ -208,6 +216,7 @@ async def verify(
         "extracted": extracted,
         "match": match_rows,
         "match_error": match_error,
+        "advisories": advisories or None,
         "note": note,
         "processing_ms": processing_ms,
         "cost_usd": extraction.cost_usd,

@@ -36,6 +36,7 @@
 
     <h2>Label vs Law</h2>
     {% if result.fields %}
+    <p class="muted legend">Each row below is a <span class="badge-golden">Golden Rule</span>: a mandatory, image provable check. Any single FAIL fails the whole label.</p>
     <table class="fields">
       <thead>
         <tr><th>Field</th><th>Status</th><th>Reason</th><th>Citation</th></tr>
@@ -43,7 +44,7 @@
       <tbody>
         {% for f in result.fields %}
         <tr class="row-{{ f.status|lower|replace(' ', '-') }}">
-          <td>{{ f.name }}</td>
+          <td>{{ f.name }}{% if f.golden %} <span class="badge-golden" title="Mandatory hard gate">Golden Rule</span>{% endif %}</td>
           <td>{{ f.status }}</td>
           <td>{{ f.reason }}</td>
           <td>{{ f.citation }}</td>
@@ -53,6 +54,18 @@
     </table>
     {% else %}
     <p class="muted">Compliance checks are added in the next task groups.</p>
+    {% endif %}
+
+    {% if result.advisories %}
+    <div class="advisory">
+      <h3>Advisory checks <span class="advisory-tag">not a pass/fail gate</span></h3>
+      <p class="muted">These depend on physical print specs (type size in mm, bold weight, contrasting background, placement) that a photo cannot prove. They are shown for a human to confirm and never change the verdict. On a vector PDF they would become hard checks.</p>
+      <ul>
+        {% for a in result.advisories %}
+        <li><strong>{{ a.field }}</strong> ({{ a.citation }}): {{ a.text }}</li>
+        {% endfor %}
+      </ul>
+    </div>
     {% endif %}
 
     {% if result.match_error %}

@@ -87,6 +87,18 @@ def test_verify_extracts_and_shows_fields(monkeypatch):
     assert "0.0042" in r.text              # per-label cost shown
 
 
+def test_verify_shows_golden_badge_and_advisory(monkeypatch):
+    # The five mandatory checks render as Golden Rules; the Tier 2 warning note
+    # renders as an advisory that is explicitly not a pass/fail gate.
+    monkeypatch.setattr(main_module, "extract_fields", lambda jpeg: _fake_result())
+    files = {"image": ("label.png", _png_bytes(), "image/png")}
+    r = client.post("/verify", files=files, data={"beverage": "spirits"})
+    assert r.status_code == 200
+    assert "Golden Rule" in r.text
+    assert "Advisory checks" in r.text
+    assert "not a pass/fail gate" in r.text
+
+
 def test_verify_with_application_shows_match_block(monkeypatch):
     monkeypatch.setattr(main_module, "extract_fields", lambda jpeg: _fake_result())
     application = '{"brand_name": "Old Tom Distillery", "alcohol_content": "40% Alc/Vol"}'
