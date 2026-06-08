@@ -1,8 +1,12 @@
 """Government Warning check (27 CFR 16.21 / 16.22).
 
-Tier 1 (image-provable, hard pass/fail): the warning must be present and verbatim,
-with "GOVERNMENT WARNING" in capital letters. Compared after normalizing whitespace
-only, never lowercasing or stripping punctuation.
+Tier 1 (image-provable, hard pass/fail): the warning must be present and carry the
+required wording, with the words "GOVERNMENT WARNING" in capital letters. The
+wording is compared verbatim EXCEPT for letter case: an all-capitals warning is
+compliant and is what most real bottles actually print, because 27 CFR 16.22
+mandates only that "GOVERNMENT WARNING" be capitalized, not the case of the body.
+So the header capitalization is checked on its own, the wording is compared
+case-insensitively, whitespace is normalized, and punctuation is not stripped.
 
 Tier 2 (cannot verify from a photo): type size in mm, bold weight, contrasting
 background, and separate-and-apart placement. Surfaced as an advisory note, never a
@@ -32,17 +36,21 @@ TIER2_ADVISORY = (
 
 
 def _explain_difference(want: str, got: str) -> tuple[str, dict]:
-    """Produce a human reason plus a small diff for a non-verbatim warning."""
-    # Common, specific cases first (clearer than a raw character diff).
-    if "(1)" not in got:
-        return "The first required sentence is missing or unreadable.", {}
-    if "(2)" not in got:
-        return "The second required sentence is missing.", {}
-    if "GOVERNMENT WARNING" not in got and "government warning" in got.lower():
-        return "'GOVERNMENT WARNING' must be in capital letters (27 CFR 16.22).", {}
+    """Produce a human reason plus a small diff for a wording mismatch.
 
-    # Otherwise, locate the first difference and show a little context.
-    matcher = difflib.SequenceMatcher(a=want, b=got, autojunk=False)
+    Letter case is ignored here (an all-caps warning is compliant); the
+    capitalization of 'GOVERNMENT WARNING' is checked separately in check().
+    """
+    low_got = got.lower()
+    # Common, specific cases first (clearer than a raw character diff).
+    if "(1)" not in low_got:
+        return "The first required sentence is missing or unreadable.", {}
+    if "(2)" not in low_got:
+        return "The second required sentence is missing.", {}
+
+    # Otherwise, locate the first wording difference (case-insensitively) and show
+    # a little context, quoting the original text so the case is visible.
+    matcher = difflib.SequenceMatcher(a=want.lower(), b=low_got, autojunk=False)
     for tag, i1, i2, j1, j2 in matcher.get_opcodes():
         if tag != "equal":
             expected_near = want[max(0, i1 - 20):i2 + 20]
@@ -66,10 +74,19 @@ def check(fields) -> RuleOutcome:
     got = normalize_ws(raw)
     want = normalize_ws(CANONICAL)
 
-    if got == want:
-        return RuleOutcome(FIELD, PASS, "Present and verbatim.", CITATION, detail)
+    # Wording is verbatim except for case (all-caps warnings are compliant), and
+    # 27 CFR 16.22 separately requires the words "GOVERNMENT WARNING" in capitals.
+    words_match = got.lower() == want.lower()
+    header_in_caps = "GOVERNMENT WARNING" in got
 
-    # Read but not matching. If the read was shaky, that is a review, not a fail.
+    if words_match and header_in_caps:
+        return RuleOutcome(FIELD, PASS, "Present and verbatim, with 'GOVERNMENT WARNING' in capital letters.", CITATION, detail)
+
+    if words_match and not header_in_caps:
+        # Right wording, but the mandated header is not capitalized (e.g. title case).
+        return RuleOutcome(FIELD, FAIL, "The words 'GOVERNMENT WARNING' must appear in capital letters (27 CFR 16.22).", CITATION, detail)
+
+    # Wording itself differs. If the read was shaky, that is a review, not a fail.
     if not fields.warning_legible:
         detail["got"] = got
         return RuleOutcome(FIELD, REVIEW, "The warning could not be read clearly enough to confirm wording. Review by hand.", CITATION, detail)

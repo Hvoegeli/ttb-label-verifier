@@ -100,6 +100,13 @@ CASES = [
         {"Government warning": PASS},
     ),
     EvalCase(
+        "compliant-warning-all-caps", "compliant",
+        "Warning printed entirely in capital letters, as real bottles do; compliant.",
+        _label(government_warning=CANONICAL.upper()),
+        PASS,
+        {"Government warning": PASS},
+    ),
+    EvalCase(
         "compliant-abv-percent-only", "compliant",
         "Alcohol stated as percent by volume with no proof; proof is optional.",
         _label(alcohol_content="45% Alc./Vol."),

@@ -35,6 +35,12 @@ def test_warning_tolerates_extra_whitespace():
     assert warning.check(fields(government_warning=spaced)).status == PASS
 
 
+def test_warning_all_caps_passes():
+    # Real bottles print the whole warning in capitals; only "GOVERNMENT WARNING"
+    # is required to be capitalized, so an all-caps body is compliant.
+    assert warning.check(fields(government_warning=warning.CANONICAL.upper())).status == PASS
+
+
 def test_warning_title_case_fails_on_capitals():
     titled = warning.CANONICAL.replace("GOVERNMENT WARNING", "Government Warning")
     out = warning.check(fields(government_warning=titled))

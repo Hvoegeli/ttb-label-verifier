@@ -30,7 +30,7 @@ Locked decisions from presearch. Do not switch any of these without explicit use
 - Dependencies: pip + requirements.txt
 
 ## Compliance correctness rules
-- The Government Warning is compared verbatim per 27 CFR 16.21; normalize whitespace only, never lowercase or strip punctuation.
+- The Government Warning wording is compared verbatim per 27 CFR 16.21, normalizing whitespace and ignoring letter case. An all-capitals warning is compliant and is what most real bottles print (confirmed against real labels 2026-06-08); 27 CFR 16.22 mandates only that the words "GOVERNMENT WARNING" be in capital letters, which IS enforced separately. Never strip punctuation. Bold weight cannot be verified from a photo and stays a Tier 2 advisory.
 - Standards of fill must match the authorized list in 27 CFR 5.203; keep the list sourced and dated (amended 2020 and January 2025).
 - Percent alcohol by volume is the mandatory alcohol statement (27 CFR 5.65); proof is optional and never a substitute.
 - The vision model never decides PASS or FAIL. It only returns field values. All verdicts come from deterministic code.

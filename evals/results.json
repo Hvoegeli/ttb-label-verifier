@@ -1,6 +1,6 @@
 {
-  "total": 52,
-  "passed": 52,
+  "total": 53,
+  "passed": 53,
   "accuracy_pct": 100.0,
   "cases": [
     {
@@ -43,6 +43,15 @@
       "id": "compliant-warning-extra-whitespace",
       "category": "compliant",
       "description": "Warning is verbatim but padded with extra spaces; whitespace is ignored.",
+      "expected_overall": "PASS",
+      "got_overall": "PASS",
+      "field_mismatches": {},
+      "passed": true
+    },
+    {
+      "id": "compliant-warning-all-caps",
+      "category": "compliant",
+      "description": "Warning printed entirely in capital letters, as real bottles do; compliant.",
       "expected_overall": "PASS",
       "got_overall": "PASS",
       "field_mismatches": {},

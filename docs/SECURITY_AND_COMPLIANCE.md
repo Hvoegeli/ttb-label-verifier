@@ -34,8 +34,8 @@ Every compliance check is tied to a specific regulation, and the result page sho
 
 | Check | Regulation |
 | --- | --- |
-| Government Warning present and verbatim, both numbered sentences | 27 CFR 16.21 |
-| "GOVERNMENT WARNING:" in capital letters | 27 CFR 16.22 |
+| Government Warning present with the required wording, both numbered sentences (compared ignoring letter case, since an all-capitals warning is compliant and is what most real bottles print) | 27 CFR 16.21 |
+| The words "GOVERNMENT WARNING" in capital letters (checked separately from the body) | 27 CFR 16.22 |
 | Net contents is an authorized standard of fill (for example 750 mL valid, 800 mL not) | 27 CFR 5.203 |
 | Alcohol content stated as percent alcohol by volume in an accepted format; proof optional only | 27 CFR 5.65 |
 | Class or type is a recognized standard of identity designation | 27 CFR 5.141 to 5.143 |
