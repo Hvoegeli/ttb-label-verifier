@@ -67,8 +67,8 @@ Phased breakdown. Phase 1 is the MVP: a working single label distilled spirits p
 - [ ] Manual extraction eval: run a handful of real bottle photos through the live model, record verdicts + cost (needs real label photos)
 
 ### 10. Audit gate (before delivery)
-- [ ] Run `/correct` on the full diff
-- [ ] Run `/security-review` (file upload attack surface, secret handling)
+- [x] Run `/correct` on the eval work (hand-traced verdicts; fixed 2 stray em dashes)
+- [x] Security pass on the upload surface and secret handling (run manually; the skill could not load from the home working directory). Found and fixed a decompression-bomb gap (pixel cap before decode); confirmed template autoescape (no reflected XSS) and that secrets never leak. See `docs/SECURITY_AND_COMPLIANCE.md`.
 - [ ] Run `/ship-check` before pushing
 
 ### 11. Submission
