@@ -30,3 +30,9 @@ metrics/
 DEMO-SCRIPT.md
 *DEMO-SCRIPT*.md
 demo-script*.md
+
+# Real bottle photos for the manual extraction eval (local only, not committed)
+evals/real_photos/
+
+# Transient per-run output of the live extraction eval (changes each run/model)
+evals/real_results.md

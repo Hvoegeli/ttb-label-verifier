@@ -10,6 +10,7 @@ We force structured output with a single tool plus tool_choice, so the model mus
 return the fields as a JSON object rather than prose we would have to parse.
 """
 import base64
+from collections.abc import Sequence
 from dataclasses import dataclass
 
 import anthropic
@@ -67,12 +68,15 @@ LABEL_FIELDS_TOOL = {
 }
 
 _PROMPT = (
-    "You are reading a U.S. distilled spirits label from an image. Read the printed "
-    "text and record each requested field by calling record_label_fields. "
+    "You are reading a U.S. distilled spirits label from one or more photos of the "
+    "same bottle (for example the front and the back). Read the printed text across "
+    "all of the images and record each requested field by calling record_label_fields. "
+    "The mandatory information is often split across faces: the government warning, net "
+    "contents, and bottler name and address are usually on the back. "
     "Transcribe exactly what is printed; do not infer, correct, complete, or judge "
     "compliance. For the government warning, copy it verbatim, character for character. "
-    "If a field is not present, use null. If the image is too unclear to read a field "
-    "confidently, set the legibility flags to false rather than guessing."
+    "If a field is not present on any image, use null. If the images are too unclear to "
+    "read a field confidently, set the legibility flags to false rather than guessing."
 )
 
 _client: anthropic.Anthropic | None = None
@@ -86,13 +90,31 @@ def _get_client() -> anthropic.Anthropic:
     return _client
 
 
-def extract_fields(jpeg_bytes: bytes) -> ExtractionResult:
-    """Send one normalized JPEG to the model and return the structured fields + cost.
+def extract_fields(images: bytes | Sequence[bytes]) -> ExtractionResult:
+    """Send one or more normalized JPEGs of the same bottle to the model and return
+    the structured fields + cost.
+
+    Accepts a single image (bytes) or several (e.g. the front and back of one
+    bottle, whose mandatory fields are split across faces). All images go in one
+    call, so the model reconciles them and we pay for one extraction.
 
     Raises ExtractionError (message safe to display) on any API failure or if the
     model does not return the forced tool call.
     """
-    image_b64 = base64.standard_b64encode(jpeg_bytes).decode("ascii")
+    if isinstance(images, (bytes, bytearray)):
+        images = [images]
+
+    image_blocks = [
+        {
+            "type": "image",
+            "source": {
+                "type": "base64",
+                "media_type": "image/jpeg",
+                "data": base64.standard_b64encode(b).decode("ascii"),
+            },
+        }
+        for b in images
+    ]
 
     try:
         response = _get_client().messages.create(
@@ -102,10 +124,7 @@ def extract_fields(jpeg_bytes: bytes) -> ExtractionResult:
             tool_choice={"type": "tool", "name": LABEL_FIELDS_TOOL["name"]},
             messages=[{
                 "role": "user",
-                "content": [
-                    {"type": "image", "source": {"type": "base64", "media_type": "image/jpeg", "data": image_b64}},
-                    {"type": "text", "text": _PROMPT},
-                ],
+                "content": [*image_blocks, {"type": "text", "text": _PROMPT}],
             }],
         )
     except anthropic.APIError as exc:
