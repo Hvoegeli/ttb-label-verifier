@@ -55,13 +55,21 @@
     <p class="muted">Compliance checks are added in the next task groups.</p>
     {% endif %}
 
+    {% if result.match_error %}
+    <div class="alert error">{{ result.match_error }}</div>
+    {% endif %}
     {% if result.match %}
     <h2>Label vs Application</h2>
     <table class="fields">
-      <thead><tr><th>Field</th><th>Result</th></tr></thead>
+      <thead><tr><th>Field</th><th>Label</th><th>Application</th><th>Result</th></tr></thead>
       <tbody>
-        {% for name, outcome in result.match.items() %}
-        <tr><td>{{ name }}</td><td>{{ outcome }}</td></tr>
+        {% for m in result.match %}
+        <tr class="row-{{ m.css }}">
+          <td>{{ m.field }}</td>
+          <td>{{ m.label }}</td>
+          <td>{{ m.application }}</td>
+          <td>{{ m.status }}{% if m.note %} <span class="muted">({{ m.note }})</span>{% endif %}</td>
+        </tr>
         {% endfor %}
       </tbody>
     </table>

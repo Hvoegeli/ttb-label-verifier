@@ -11,6 +11,7 @@ yet. Until they are, /verify validates and normalizes the image and renders the
 result skeleton with a clear "pending" notice, so the app runs end to end today.
 """
 import base64
+import json
 import time
 from pathlib import Path
 
@@ -19,7 +20,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from . import costs
+from . import costs, matcher
 from .config import settings
 from .extractor import ExtractionError, extract_fields
 from .images import ImageValidationError, has_allowed_extension, normalize_to_jpeg
@@ -177,6 +178,20 @@ async def verify(
         overall = overall_verdict(outcomes, fields.overall_legible)
         note = None
 
+    # Optional match check: compare the label against a mock application (JSON).
+    match_rows = None
+    match_error = None
+    if application and application.strip():
+        try:
+            app_data = json.loads(application)
+        except (json.JSONDecodeError, ValueError):
+            match_error = "Could not read the application data as JSON. Compliance result is shown; the comparison was skipped."
+        else:
+            if isinstance(app_data, dict):
+                match_rows = [m.as_row() for m in matcher.compare(fields, app_data)] or None
+            else:
+                match_error = "Application data must be a JSON object of field values."
+
     # Only the content fields are displayed; the legibility flags drive logic, not the table.
     extracted = {
         "Brand name": fields.brand_name,
@@ -191,7 +206,8 @@ async def verify(
         "overall": overall,
         "fields": [o.as_row() for o in outcomes],
         "extracted": extracted,
-        "match": None,
+        "match": match_rows,
+        "match_error": match_error,
         "note": note,
         "processing_ms": processing_ms,
         "cost_usd": extraction.cost_usd,

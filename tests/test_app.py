@@ -87,6 +87,26 @@ def test_verify_extracts_and_shows_fields(monkeypatch):
     assert "0.0042" in r.text              # per-label cost shown
 
 
+def test_verify_with_application_shows_match_block(monkeypatch):
+    monkeypatch.setattr(main_module, "extract_fields", lambda jpeg: _fake_result())
+    application = '{"brand_name": "Old Tom Distillery", "alcohol_content": "40% Alc/Vol"}'
+    files = {"image": ("label.png", _png_bytes(), "image/png")}
+    r = client.post("/verify", files=files, data={"beverage": "spirits", "application": application})
+    assert r.status_code == 200
+    assert "Label vs Application" in r.text
+    assert "MISMATCH" in r.text  # 40% application vs 45% label
+    assert "MATCH" in r.text     # brand matches after normalization
+
+
+def test_verify_with_bad_application_json_is_graceful(monkeypatch):
+    monkeypatch.setattr(main_module, "extract_fields", lambda jpeg: _fake_result())
+    files = {"image": ("label.png", _png_bytes(), "image/png")}
+    r = client.post("/verify", files=files, data={"beverage": "spirits", "application": "{not valid json"})
+    assert r.status_code == 200
+    assert "Could not read the application data as JSON" in r.text
+    assert "PASS" in r.text  # compliance result still shown
+
+
 def test_verify_illegible_routes_to_review(monkeypatch):
     monkeypatch.setattr(
         main_module, "extract_fields", lambda jpeg: _fake_result(overall_legible=False)

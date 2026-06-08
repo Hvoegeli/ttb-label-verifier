@@ -31,8 +31,8 @@ Phased breakdown. Phase 1 is the MVP: a working single label distilled spirits p
 
 ### 5. Verdict and match check [MVP8] [MVP9]
 - [x] Verdict assembler: combine rule outcomes into PASS / FAIL / NEEDS REVIEW (FAIL>REVIEW>PASS), wired into /verify and the result page
-- [ ] `matcher.py`: compare fields to a mock application JSON; brand normalized, warning exact
-- [ ] Wire match results into the result page (Label vs Application block)
+- [x] `matcher.py`: compare fields to a mock application JSON; brand/class loose, alcohol on percent, net on volume, warning exact
+- [x] Wire match results into the result page (Label vs Application block); optional JSON panel; example application files in examples/
 
 ### 6. Deploy [MVP12]
 - [ ] Render web service from the GitHub repo

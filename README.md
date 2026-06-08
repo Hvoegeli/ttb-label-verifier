@@ -104,6 +104,6 @@ fraction of a cent per label.
 ## Status
 
 Working core: upload, extraction, the full distilled-spirits rule engine, the
-overall verdict, and cost/efficiency reporting. In progress: the optional
-label-vs-application match check, a public deployment, and the curated eval
+overall verdict, the optional label-vs-application match check, and
+cost/efficiency reporting. In progress: a public deployment and the curated eval
 label set.

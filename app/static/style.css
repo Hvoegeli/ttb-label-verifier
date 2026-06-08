@@ -103,6 +103,9 @@ table.fields th { font-size: 14px; text-transform: uppercase; letter-spacing: 0.
 .row-pass td:nth-child(2) { color: var(--pass); font-weight: 700; }
 .row-fail td:nth-child(2) { color: var(--fail); font-weight: 700; }
 .row-needs-review td:nth-child(2) { color: var(--review); font-weight: 700; }
+.row-match td:last-child { color: var(--pass); font-weight: 700; }
+.row-mismatch td:last-child { color: var(--fail); font-weight: 700; }
+.row-na td:last-child { color: var(--review); font-weight: 700; }
 
 .nav-stats { margin-left: auto; color: #fff; text-decoration: none; font-size: 15px; opacity: 0.9; }
 .nav-stats:hover { text-decoration: underline; }
