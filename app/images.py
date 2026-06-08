@@ -32,6 +32,15 @@ ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".heic", ".heif"}
 # this keeps the per-call image-token cost and latency down while staying legible.
 MAX_DIMENSION = 1568
 
+# Hard cap on total pixels (width times height) accepted before decoding, as a
+# decompression-bomb defense. A small file can declare enormous dimensions that
+# expand to gigabytes once decoded; the byte-size limit cannot see that. 50
+# megapixels is far above any real label photo that fits under the byte limit and
+# far below the range where a crafted file could exhaust memory. Pillow's own
+# limit is about 179 megapixels and merely warns below it, so we enforce a lower,
+# explicit bound of our own.
+MAX_PIXELS = 50_000_000
+
 # JPEG quality for the normalized output. 90 is visually lossless for text.
 JPEG_QUALITY = 90
 
@@ -53,8 +62,26 @@ def normalize_to_jpeg(raw: bytes, max_mb: int) -> bytes:
             f"Image is larger than the {max_mb} MB limit. Please upload a smaller photo."
         )
 
+    # Open reads only the header, so dimensions are known cheaply, before we
+    # commit any memory to a full decode.
     try:
         img = Image.open(io.BytesIO(raw))
+    except Exception:
+        raise ImageValidationError(
+            "Could not read this file as an image. Please upload a JPG, PNG, WebP, or HEIC."
+        )
+
+    # Decompression-bomb guard: reject implausibly large pixel dimensions BEFORE
+    # decoding. A 10 KB file can declare 12000x12000 (144M pixels), slip past the
+    # byte gate, and allocate hundreds of MB on img.load(). Pillow only warns in
+    # that band, so this explicit check is what actually stops it.
+    width, height = img.size
+    if width * height > MAX_PIXELS:
+        raise ImageValidationError(
+            "Image dimensions are too large. Please upload a normal photo of the label."
+        )
+
+    try:
         img.load()  # force a full decode so a corrupt file fails here, not later
     except Exception:
         raise ImageValidationError(

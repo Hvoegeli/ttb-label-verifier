@@ -160,6 +160,18 @@ def test_verify_rejects_oversized_before_read(monkeypatch):
     assert "larger than the 0 MB limit" in r.text
 
 
+def test_verify_rejects_oversized_pixel_dimensions(monkeypatch):
+    # Decompression-bomb guard: lower the pixel cap below a normal small image's
+    # dimensions and confirm it is rejected at the dimension check, before decode.
+    import app.images as images_module
+
+    monkeypatch.setattr(images_module, "MAX_PIXELS", 100)
+    files = {"image": ("label.png", _png_bytes(size=(60, 40)), "image/png")}
+    r = client.post("/verify", files=files, data={"beverage": "spirits"})
+    assert r.status_code == 400
+    assert "dimensions are too large" in r.text
+
+
 def test_verify_rejects_corrupt_image():
     # Right extension, but the bytes are not a real image.
     files = {"image": ("fake.png", b"this is not a png", "image/png")}
