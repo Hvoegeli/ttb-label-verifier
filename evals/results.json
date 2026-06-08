@@ -1,0 +1,214 @@
+{
+  "total": 23,
+  "passed": 23,
+  "accuracy_pct": 100.0,
+  "cases": [
+    {
+      "id": "compliant-baseline",
+      "category": "compliant",
+      "description": "A correct bourbon label; nothing wrong.",
+      "expected_overall": "PASS",
+      "got_overall": "PASS",
+      "field_mismatches": {},
+      "passed": true
+    },
+    {
+      "id": "compliant-vodka-1750",
+      "category": "compliant",
+      "description": "A different but valid spirit: vodka, 40% Alc/Vol, 1.75 L.",
+      "expected_overall": "PASS",
+      "got_overall": "PASS",
+      "field_mismatches": {},
+      "passed": true
+    },
+    {
+      "id": "compliant-brand-fallback",
+      "category": "compliant",
+      "description": "No separate brand name, but a name/address statement stands in (5.64(a)).",
+      "expected_overall": "PASS",
+      "got_overall": "PASS",
+      "field_mismatches": {},
+      "passed": true
+    },
+    {
+      "id": "compliant-min-fill-50ml",
+      "category": "compliant",
+      "description": "Smallest authorized size, 50 mL miniature.",
+      "expected_overall": "PASS",
+      "got_overall": "PASS",
+      "field_mismatches": {},
+      "passed": true
+    },
+    {
+      "id": "compliant-warning-extra-whitespace",
+      "category": "compliant",
+      "description": "Warning is verbatim but padded with extra spaces; whitespace is ignored.",
+      "expected_overall": "PASS",
+      "got_overall": "PASS",
+      "field_mismatches": {},
+      "passed": true
+    },
+    {
+      "id": "compliant-abv-percent-only",
+      "category": "compliant",
+      "description": "Alcohol stated as percent by volume with no proof; proof is optional.",
+      "expected_overall": "PASS",
+      "got_overall": "PASS",
+      "field_mismatches": {},
+      "passed": true
+    },
+    {
+      "id": "compliant-gin",
+      "category": "compliant",
+      "description": "London Dry Gin, a recognized class/type designation.",
+      "expected_overall": "PASS",
+      "got_overall": "PASS",
+      "field_mismatches": {},
+      "passed": true
+    },
+    {
+      "id": "warning-title-case",
+      "category": "warning",
+      "description": "'GOVERNMENT WARNING' rendered in title case instead of capitals.",
+      "expected_overall": "FAIL",
+      "got_overall": "FAIL",
+      "field_mismatches": {},
+      "passed": true
+    },
+    {
+      "id": "warning-missing-sentence-2",
+      "category": "warning",
+      "description": "The second required sentence (drive/operate machinery) is dropped.",
+      "expected_overall": "FAIL",
+      "got_overall": "FAIL",
+      "field_mismatches": {},
+      "passed": true
+    },
+    {
+      "id": "warning-altered-wording",
+      "category": "warning",
+      "description": "'health problems' changed to 'health issues' -- not verbatim.",
+      "expected_overall": "FAIL",
+      "got_overall": "FAIL",
+      "field_mismatches": {},
+      "passed": true
+    },
+    {
+      "id": "warning-missing-legible",
+      "category": "warning",
+      "description": "No warning at all on an otherwise clearly readable label.",
+      "expected_overall": "FAIL",
+      "got_overall": "FAIL",
+      "field_mismatches": {},
+      "passed": true
+    },
+    {
+      "id": "warning-garbled-illegible",
+      "category": "warning",
+      "description": "Warning present but unreadable and flagged illegible -> human review, not a fail.",
+      "expected_overall": "NEEDS REVIEW",
+      "got_overall": "NEEDS REVIEW",
+      "field_mismatches": {},
+      "passed": true
+    },
+    {
+      "id": "fill-offlist-800ml",
+      "category": "fill",
+      "description": "800 mL is not an authorized standard of fill.",
+      "expected_overall": "FAIL",
+      "got_overall": "FAIL",
+      "field_mismatches": {},
+      "passed": true
+    },
+    {
+      "id": "fill-offlist-1600ml",
+      "category": "fill",
+      "description": "1.6 L is not an authorized standard of fill.",
+      "expected_overall": "FAIL",
+      "got_overall": "FAIL",
+      "field_mismatches": {},
+      "passed": true
+    },
+    {
+      "id": "fill-unparseable",
+      "category": "fill",
+      "description": "Net contents present but not a readable metric volume -> review.",
+      "expected_overall": "NEEDS REVIEW",
+      "got_overall": "NEEDS REVIEW",
+      "field_mismatches": {},
+      "passed": true
+    },
+    {
+      "id": "abv-proof-alone",
+      "category": "abv",
+      "description": "Only proof is stated; percent alcohol by volume is mandatory.",
+      "expected_overall": "FAIL",
+      "got_overall": "FAIL",
+      "field_mismatches": {},
+      "passed": true
+    },
+    {
+      "id": "abv-bare-percent",
+      "category": "abv",
+      "description": "A bare percentage not labeled as alcohol by volume -> review.",
+      "expected_overall": "NEEDS REVIEW",
+      "got_overall": "NEEDS REVIEW",
+      "field_mismatches": {},
+      "passed": true
+    },
+    {
+      "id": "classtype-unrecognized",
+      "category": "classtype",
+      "description": "An invented designation a human should confirm -> review.",
+      "expected_overall": "NEEDS REVIEW",
+      "got_overall": "NEEDS REVIEW",
+      "field_mismatches": {},
+      "passed": true
+    },
+    {
+      "id": "presence-missing-net-contents",
+      "category": "presence",
+      "description": "Net contents missing entirely -> a mandatory field is absent.",
+      "expected_overall": "FAIL",
+      "got_overall": "FAIL",
+      "field_mismatches": {},
+      "passed": true
+    },
+    {
+      "id": "presence-no-brand-no-name",
+      "category": "presence",
+      "description": "Neither a brand name nor a name/address statement -> nothing to identify it.",
+      "expected_overall": "FAIL",
+      "got_overall": "FAIL",
+      "field_mismatches": {},
+      "passed": true
+    },
+    {
+      "id": "presence-missing-when-illegible",
+      "category": "presence",
+      "description": "Class/type missing AND the image was not clearly readable -> review, not fail.",
+      "expected_overall": "NEEDS REVIEW",
+      "got_overall": "NEEDS REVIEW",
+      "field_mismatches": {},
+      "passed": true
+    },
+    {
+      "id": "illegible-overall",
+      "category": "aggregation",
+      "description": "Every field looks valid but the whole image was flagged unreadable -> review.",
+      "expected_overall": "NEEDS REVIEW",
+      "got_overall": "NEEDS REVIEW",
+      "field_mismatches": {},
+      "passed": true
+    },
+    {
+      "id": "multi-fail-beats-review",
+      "category": "aggregation",
+      "description": "An illegal fill size (FAIL) plus an unrecognized class/type (REVIEW); FAIL wins.",
+      "expected_overall": "FAIL",
+      "got_overall": "FAIL",
+      "field_mismatches": {},
+      "passed": true
+    }
+  ]
+}
