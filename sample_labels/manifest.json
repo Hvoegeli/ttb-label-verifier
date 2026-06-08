@@ -1,0 +1,394 @@
+[
+  {
+    "id": "spirits_pass_bourbon",
+    "file": "images/spirits_pass_bourbon.png",
+    "beverage": "spirits",
+    "expected": "PASS",
+    "planted": "Fully compliant bourbon.",
+    "fields": {
+      "brand_name": "OLD TOM DISTILLERY",
+      "class_type": "Kentucky Straight Bourbon Whiskey",
+      "alcohol_content": "45% Alc./Vol. (90 Proof)",
+      "net_contents": "750 mL",
+      "name_and_address": "Bottled by Old Tom Distillery, Bardstown, KY",
+      "government_warning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems.",
+      "warning_legible": true,
+      "overall_legible": true
+    }
+  },
+  {
+    "id": "spirits_pass_vodka",
+    "file": "images/spirits_pass_vodka.png",
+    "beverage": "spirits",
+    "expected": "PASS",
+    "planted": "Compliant vodka at an authorized 1 L fill.",
+    "fields": {
+      "brand_name": "NORTH CREEK VODKA",
+      "class_type": "Vodka",
+      "alcohol_content": "40% Alc/Vol",
+      "net_contents": "1 L",
+      "name_and_address": "Distilled by North Creek Spirits, Austin, TX",
+      "government_warning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems.",
+      "warning_legible": true,
+      "overall_legible": true
+    }
+  },
+  {
+    "id": "spirits_pass_rye",
+    "file": "images/spirits_pass_rye.png",
+    "beverage": "spirits",
+    "expected": "PASS",
+    "planted": "Compliant rye in a 1.75 L handle.",
+    "fields": {
+      "brand_name": "IRON RIDGE RYE",
+      "class_type": "Straight Rye Whiskey",
+      "alcohol_content": "50% Alc./Vol.",
+      "net_contents": "1.75 L",
+      "name_and_address": "Bottled by Old Tom Distillery, Bardstown, KY",
+      "government_warning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems.",
+      "warning_legible": true,
+      "overall_legible": true
+    }
+  },
+  {
+    "id": "spirits_fail_fill",
+    "file": "images/spirits_fail_fill.png",
+    "beverage": "spirits",
+    "expected": "FAIL",
+    "planted": "800 mL is not an authorized standard of fill (27 CFR 5.203).",
+    "fields": {
+      "brand_name": "OLD TOM DISTILLERY",
+      "class_type": "Kentucky Straight Bourbon Whiskey",
+      "alcohol_content": "45% Alc./Vol. (90 Proof)",
+      "net_contents": "800 mL",
+      "name_and_address": "Bottled by Old Tom Distillery, Bardstown, KY",
+      "government_warning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems.",
+      "warning_legible": true,
+      "overall_legible": true
+    }
+  },
+  {
+    "id": "spirits_fail_warning_garbled",
+    "file": "images/spirits_fail_warning_garbled.png",
+    "beverage": "spirits",
+    "expected": "FAIL",
+    "planted": "Warning read cleanly but wording altered ('health issues' for 'health problems').",
+    "fields": {
+      "brand_name": "OLD TOM DISTILLERY",
+      "class_type": "Kentucky Straight Bourbon Whiskey",
+      "alcohol_content": "45% Alc./Vol. (90 Proof)",
+      "net_contents": "750 mL",
+      "name_and_address": "Bottled by Old Tom Distillery, Bardstown, KY",
+      "government_warning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health issues.",
+      "warning_legible": true,
+      "overall_legible": true
+    }
+  },
+  {
+    "id": "spirits_fail_warning_header",
+    "file": "images/spirits_fail_warning_header.png",
+    "beverage": "spirits",
+    "expected": "FAIL",
+    "planted": "'Government Warning' not in capital letters (27 CFR 16.22).",
+    "fields": {
+      "brand_name": "OLD TOM DISTILLERY",
+      "class_type": "Kentucky Straight Bourbon Whiskey",
+      "alcohol_content": "45% Alc./Vol. (90 Proof)",
+      "net_contents": "750 mL",
+      "name_and_address": "Bottled by Old Tom Distillery, Bardstown, KY",
+      "government_warning": "Government Warning: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems.",
+      "warning_legible": true,
+      "overall_legible": true
+    }
+  },
+  {
+    "id": "spirits_fail_proof_only",
+    "file": "images/spirits_fail_proof_only.png",
+    "beverage": "spirits",
+    "expected": "FAIL",
+    "planted": "Only proof stated; percent alcohol by volume is mandatory (27 CFR 5.65).",
+    "fields": {
+      "brand_name": "OLD TOM DISTILLERY",
+      "class_type": "Kentucky Straight Bourbon Whiskey",
+      "alcohol_content": "90 Proof",
+      "net_contents": "750 mL",
+      "name_and_address": "Bottled by Old Tom Distillery, Bardstown, KY",
+      "government_warning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems.",
+      "warning_legible": true,
+      "overall_legible": true
+    }
+  },
+  {
+    "id": "spirits_review_classtype",
+    "file": "images/spirits_review_classtype.png",
+    "beverage": "spirits",
+    "expected": "NEEDS REVIEW",
+    "planted": "Unrecognized class/type routes to a human, not an automatic fail.",
+    "fields": {
+      "brand_name": "MYSTIC STILL",
+      "class_type": "Artisanal Mystery Spirit",
+      "alcohol_content": "45% Alc./Vol. (90 Proof)",
+      "net_contents": "750 mL",
+      "name_and_address": "Bottled by Old Tom Distillery, Bardstown, KY",
+      "government_warning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems.",
+      "warning_legible": true,
+      "overall_legible": true
+    }
+  },
+  {
+    "id": "wine_pass_cabernet",
+    "file": "images/wine_pass_cabernet.png",
+    "beverage": "wine",
+    "expected": "PASS",
+    "planted": "Compliant varietal wine with appellation and vintage.",
+    "fields": {
+      "brand_name": "STONECREST CELLARS",
+      "class_type": "Cabernet Sauvignon",
+      "alcohol_content": "13.5% Alc./Vol.",
+      "net_contents": "750 mL",
+      "name_and_address": "Produced and bottled by Stonecrest Cellars, Napa, CA",
+      "government_warning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems.",
+      "appellation": "Napa Valley",
+      "vintage": "2019",
+      "grape_varietal": "Cabernet Sauvignon",
+      "sulfite_statement": "Contains Sulfites",
+      "warning_legible": true,
+      "overall_legible": true
+    }
+  },
+  {
+    "id": "wine_pass_table_no_abv",
+    "file": "images/wine_pass_table_no_abv.png",
+    "beverage": "wine",
+    "expected": "PASS",
+    "planted": "Table wine 14% or under may omit the numeric ABV (27 CFR 4.36).",
+    "fields": {
+      "brand_name": "HARVEST ROAD",
+      "class_type": "Red Table Wine",
+      "alcohol_content": null,
+      "net_contents": "750 mL",
+      "name_and_address": "Produced and bottled by Stonecrest Cellars, Napa, CA",
+      "government_warning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems.",
+      "appellation": null,
+      "vintage": null,
+      "grape_varietal": null,
+      "sulfite_statement": "Contains Sulfites",
+      "warning_legible": true,
+      "overall_legible": true
+    }
+  },
+  {
+    "id": "wine_pass_chardonnay",
+    "file": "images/wine_pass_chardonnay.png",
+    "beverage": "wine",
+    "expected": "PASS",
+    "planted": "Compliant Chardonnay with appellation for its varietal/vintage.",
+    "fields": {
+      "brand_name": "SONOMA BLUFF",
+      "class_type": "Chardonnay",
+      "alcohol_content": "13.5% Alc./Vol.",
+      "net_contents": "750 mL",
+      "name_and_address": "Produced and bottled by Stonecrest Cellars, Napa, CA",
+      "government_warning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems.",
+      "appellation": "Sonoma Coast",
+      "vintage": "2021",
+      "grape_varietal": "Chardonnay",
+      "sulfite_statement": "Contains Sulfites",
+      "warning_legible": true,
+      "overall_legible": true
+    }
+  },
+  {
+    "id": "wine_fail_fill",
+    "file": "images/wine_fail_fill.png",
+    "beverage": "wine",
+    "expected": "FAIL",
+    "planted": "900 mL is a spirits size, not an authorized WINE fill (27 CFR 4.72).",
+    "fields": {
+      "brand_name": "STONECREST CELLARS",
+      "class_type": "Cabernet Sauvignon",
+      "alcohol_content": "13.5% Alc./Vol.",
+      "net_contents": "900 mL",
+      "name_and_address": "Produced and bottled by Stonecrest Cellars, Napa, CA",
+      "government_warning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems.",
+      "appellation": "Napa Valley",
+      "vintage": "2019",
+      "grape_varietal": "Cabernet Sauvignon",
+      "sulfite_statement": "Contains Sulfites",
+      "warning_legible": true,
+      "overall_legible": true
+    }
+  },
+  {
+    "id": "wine_fail_no_abv",
+    "file": "images/wine_fail_no_abv.png",
+    "beverage": "wine",
+    "expected": "FAIL",
+    "planted": "Non-table wine with no ABV statement (27 CFR 4.36).",
+    "fields": {
+      "brand_name": "CELLAR 9",
+      "class_type": "Merlot",
+      "alcohol_content": null,
+      "net_contents": "750 mL",
+      "name_and_address": "Produced and bottled by Stonecrest Cellars, Napa, CA",
+      "government_warning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems.",
+      "appellation": null,
+      "vintage": null,
+      "grape_varietal": null,
+      "sulfite_statement": "Contains Sulfites",
+      "warning_legible": true,
+      "overall_legible": true
+    }
+  },
+  {
+    "id": "wine_review_no_appellation",
+    "file": "images/wine_review_no_appellation.png",
+    "beverage": "wine",
+    "expected": "NEEDS REVIEW",
+    "planted": "Varietal and vintage shown but no appellation (27 CFR 4.34) -> review.",
+    "fields": {
+      "brand_name": "STONECREST CELLARS",
+      "class_type": "Cabernet Sauvignon",
+      "alcohol_content": "13.5% Alc./Vol.",
+      "net_contents": "750 mL",
+      "name_and_address": "Produced and bottled by Stonecrest Cellars, Napa, CA",
+      "government_warning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems.",
+      "appellation": null,
+      "vintage": "2019",
+      "grape_varietal": "Cabernet Sauvignon",
+      "sulfite_statement": "Contains Sulfites",
+      "warning_legible": true,
+      "overall_legible": true
+    }
+  },
+  {
+    "id": "wine_review_classtype",
+    "file": "images/wine_review_classtype.png",
+    "beverage": "wine",
+    "expected": "NEEDS REVIEW",
+    "planted": "Unrecognized designation with no varietal routes to a human.",
+    "fields": {
+      "brand_name": "ODD LOT",
+      "class_type": "Mystery Cuvee",
+      "alcohol_content": "13.5% Alc./Vol.",
+      "net_contents": "750 mL",
+      "name_and_address": "Produced and bottled by Stonecrest Cellars, Napa, CA",
+      "government_warning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems.",
+      "appellation": null,
+      "vintage": null,
+      "grape_varietal": null,
+      "sulfite_statement": "Contains Sulfites",
+      "warning_legible": true,
+      "overall_legible": true
+    }
+  },
+  {
+    "id": "beer_pass_ipa",
+    "file": "images/beer_pass_ipa.png",
+    "beverage": "beer",
+    "expected": "PASS",
+    "planted": "Compliant IPA with optional ABV stated correctly.",
+    "fields": {
+      "brand_name": "RIVERBED BREWING",
+      "class_type": "India Pale Ale",
+      "alcohol_content": "6.5% Alc/Vol",
+      "net_contents": "12 FL OZ",
+      "name_and_address": "Brewed and bottled by Riverbed Brewing Co., Portland, OR",
+      "government_warning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems.",
+      "is_flavored_malt_beverage": false,
+      "warning_legible": true,
+      "overall_legible": true
+    }
+  },
+  {
+    "id": "beer_pass_lager_no_abv",
+    "file": "images/beer_pass_lager_no_abv.png",
+    "beverage": "beer",
+    "expected": "PASS",
+    "planted": "Ordinary lager may omit ABV (optional federally, 27 CFR 7.65).",
+    "fields": {
+      "brand_name": "STILLWATER LAGER",
+      "class_type": "Lager",
+      "alcohol_content": null,
+      "net_contents": "12 FL OZ",
+      "name_and_address": "Brewed and bottled by Riverbed Brewing Co., Portland, OR",
+      "government_warning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems.",
+      "is_flavored_malt_beverage": false,
+      "warning_legible": true,
+      "overall_legible": true
+    }
+  },
+  {
+    "id": "beer_fail_fmb_no_abv",
+    "file": "images/beer_fail_fmb_no_abv.png",
+    "beverage": "beer",
+    "expected": "FAIL",
+    "planted": "Flavored malt beverage MUST state ABV but none is shown (27 CFR 7.63).",
+    "fields": {
+      "brand_name": "FIZZ HARD SELTZER",
+      "class_type": "Malt Beverage",
+      "alcohol_content": null,
+      "net_contents": "12 FL OZ",
+      "name_and_address": "Brewed and bottled by Riverbed Brewing Co., Portland, OR",
+      "government_warning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems.",
+      "is_flavored_malt_beverage": true,
+      "warning_legible": true,
+      "overall_legible": true,
+      "statement_of_composition": "Malt beverage with natural flavors"
+    }
+  },
+  {
+    "id": "beer_fail_warning",
+    "file": "images/beer_fail_warning.png",
+    "beverage": "beer",
+    "expected": "FAIL",
+    "planted": "Warning read cleanly but wording altered.",
+    "fields": {
+      "brand_name": "RIVERBED BREWING",
+      "class_type": "India Pale Ale",
+      "alcohol_content": "6.5% Alc/Vol",
+      "net_contents": "12 FL OZ",
+      "name_and_address": "Brewed and bottled by Riverbed Brewing Co., Portland, OR",
+      "government_warning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health issues.",
+      "is_flavored_malt_beverage": false,
+      "warning_legible": true,
+      "overall_legible": true
+    }
+  },
+  {
+    "id": "beer_review_abv_abbrev",
+    "file": "images/beer_review_abv_abbrev.png",
+    "beverage": "beer",
+    "expected": "NEEDS REVIEW",
+    "planted": "'ABV' is not an authorized abbreviation (27 CFR 7.65) -> review.",
+    "fields": {
+      "brand_name": "RIVERBED BREWING",
+      "class_type": "India Pale Ale",
+      "alcohol_content": "5% ABV",
+      "net_contents": "12 FL OZ",
+      "name_and_address": "Brewed and bottled by Riverbed Brewing Co., Portland, OR",
+      "government_warning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems.",
+      "is_flavored_malt_beverage": false,
+      "warning_legible": true,
+      "overall_legible": true
+    }
+  },
+  {
+    "id": "beer_review_classtype",
+    "file": "images/beer_review_classtype.png",
+    "beverage": "beer",
+    "expected": "NEEDS REVIEW",
+    "planted": "Unrecognized style with no statement of composition routes to a human.",
+    "fields": {
+      "brand_name": "ZAP SELTZER",
+      "class_type": "Sparkle Pop",
+      "alcohol_content": "5% Alc/Vol",
+      "net_contents": "12 FL OZ",
+      "name_and_address": "Brewed and bottled by Riverbed Brewing Co., Portland, OR",
+      "government_warning": "GOVERNMENT WARNING: (1) According to the Surgeon General, women should not drink alcoholic beverages during pregnancy because of the risk of birth defects. (2) Consumption of alcoholic beverages impairs your ability to drive a car or operate machinery, and may cause health problems.",
+      "is_flavored_malt_beverage": false,
+      "warning_legible": true,
+      "overall_legible": true
+    }
+  }
+]
