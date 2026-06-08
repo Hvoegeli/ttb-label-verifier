@@ -1,0 +1,29 @@
+# Secrets and env
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+
+# Local uploads / scratch
+uploads/
+tmp/
+
+# Demo / demo-video scripts are local working docs, never committed
+DEMO-SCRIPT.md
+*DEMO-SCRIPT*.md
+demo-script*.md
