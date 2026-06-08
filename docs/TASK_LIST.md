@@ -16,10 +16,10 @@ Phased breakdown. Phase 1 is the MVP: a working single label distilled spirits p
 - [x] Result page skeleton: overall verdict banner, per field rows, uploaded image preview
 
 ### 3. Vision extraction [MVP2] [MVP11]
-- [ ] `extractor.py`: encode image, build the tool-use schema for label fields
-- [ ] One Claude vision call returning typed JSON (brand, class/type, alcohol content, net contents, name and address, warning text) with per field confidence
-- [ ] Confidence gate: low confidence or unreadable returns "request a better image" / routes field to review
-- [ ] Confirm exact model id and params against the claude-api reference
+- [x] `extractor.py`: encode image, build the tool-use schema for label fields
+- [x] One Claude vision call returning typed JSON (brand, class/type, alcohol content, net contents, name and address, warning text) with legibility flags
+- [x] Confidence gate: not overall_legible routes to NEEDS REVIEW ("request a better image"); extraction errors do too
+- [x] Confirm exact model id and params against the claude-api reference (default claude-haiku-4-5, $1/$5; Sonnet fallback via CLAUDE_MODEL)
 
 ### 4. Rule engine: distilled spirits [MVP3] [MVP4] [MVP5] [MVP6] [MVP7]
 - [ ] `rules/warning.py`: verbatim Government Warning check (27 CFR 16.21) plus capitals on "GOVERNMENT WARNING:" (27 CFR 16.22); whitespace normalized only

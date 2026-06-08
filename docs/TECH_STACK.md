@@ -44,7 +44,7 @@ No database. State lives only for the duration of one request.
 | ASGI server | Uvicorn | latest | Standard FastAPI server. |
 | Templates | Jinja2 | latest | Server rendered HTML; one upload page, one result page. No SPA needed. |
 | Frontend | HTML + vanilla JS | n/a | Dead simple UX bar. No build step, nothing to break. |
-| Vision model | Anthropic Claude (vision) | confirm via claude-api skill | Strong on skewed / glare images; fast enough for the 5 second budget. Sonnet is the working default; Haiku if latency bound. |
+| Vision model | Claude Haiku 4.5 (`claude-haiku-4-5`) | $1/$5 per 1M in/out | Cheapest vision-capable model; read the verbatim warning correctly in live testing. Override to `claude-sonnet-4-6` ($3/$15) via CLAUDE_MODEL only if accuracy needs it. |
 | LLM SDK | anthropic (Python) | latest | Official SDK; tool-use forces structured JSON extraction. |
 | Rule engine | Plain Python modules | n/a | Pure functions encoding 27 CFR Parts 5 and 16. Deterministic and auditable. |
 | Tests | pytest | latest | Rule unit tests plus the eval label set as parametrized cases. |

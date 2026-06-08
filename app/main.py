@@ -11,6 +11,7 @@ yet. Until they are, /verify validates and normalizes the image and renders the
 result skeleton with a clear "pending" notice, so the app runs end to end today.
 """
 import base64
+import time
 from pathlib import Path
 
 from fastapi import FastAPI, File, Form, Request, UploadFile
@@ -19,6 +20,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from .config import settings
+from .extractor import ExtractionError, extract_fields
 from .images import ImageValidationError, has_allowed_extension, normalize_to_jpeg
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -101,24 +103,58 @@ async def verify(
             status_code=400,
         )
 
-    # Placeholder result until extraction (Group 3) and rules (Group 4) land.
-    result = {
-        "overall": "PENDING",
-        "fields": [],
-        "match": None,
-        "note": "Field extraction and compliance checks are implemented in the next task groups.",
-        "processing_ms": None,
-    }
-
     # Show the cleaned image back to the user as a preview.
     image_b64 = base64.b64encode(jpeg).decode("ascii")
 
+    # One vision call extracts the fields. Time it so we can show (and prove) the
+    # per-label latency. Rule checks (Task Group 4) are not wired in yet.
+    started = time.perf_counter()
+    try:
+        fields = extract_fields(jpeg)
+    except ExtractionError as exc:
+        result = {
+            "overall": "NEEDS REVIEW",
+            "fields": [],
+            "extracted": None,
+            "match": None,
+            "note": f"{exc}",
+            "processing_ms": (time.perf_counter() - started) * 1000,
+        }
+        return templates.TemplateResponse(
+            request, "result.html",
+            {"result": result, "image_b64": image_b64, "beverage": beverage},
+        )
+
+    processing_ms = (time.perf_counter() - started) * 1000
+
+    # Confidence gate: never auto-pass an image we could not read confidently.
+    if not fields.overall_legible:
+        overall = "NEEDS REVIEW"
+        note = "The image was not clear enough to read confidently. Please upload a sharper, well-lit, straight-on photo."
+    else:
+        overall = "PENDING"
+        note = "Fields read from the label. Compliance rule checks are added in the next task group."
+
+    # Only the content fields are displayed; the legibility flags drive logic, not the table.
+    extracted = {
+        "Brand name": fields.brand_name,
+        "Class/type": fields.class_type,
+        "Alcohol content": fields.alcohol_content,
+        "Net contents": fields.net_contents,
+        "Name and address": fields.name_and_address,
+        "Government warning": fields.government_warning,
+    }
+
+    result = {
+        "overall": overall,
+        "fields": [],            # rule rows arrive in Task Group 4
+        "extracted": extracted,
+        "match": None,
+        "note": note,
+        "processing_ms": processing_ms,
+    }
     return templates.TemplateResponse(
         request,
         "result.html",
-        {
-            "result": result,
-            "image_b64": image_b64,
-            "beverage": beverage,
-        },
+        {"result": result, "image_b64": image_b64, "beverage": beverage},
     )

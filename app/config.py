@@ -16,9 +16,10 @@ load_dotenv()
 class Settings:
     # Required for extraction (Task Group 3). Empty until a key is provided.
     anthropic_api_key: str = os.getenv("ANTHROPIC_API_KEY", "")
-    # The exact vision model id is confirmed via the claude-api reference before
-    # the extractor is written, so it stays configurable here.
-    claude_model: str = os.getenv("CLAUDE_MODEL", "")
+    # Vision model id. Default is the cheapest vision-capable model (Haiku 4.5,
+    # $1/$5 per 1M tokens). Override with CLAUDE_MODEL=claude-sonnet-4-6 if Haiku
+    # misreads small warning text too often. Confirmed via the claude-api reference.
+    claude_model: str = os.getenv("CLAUDE_MODEL") or "claude-haiku-4-5"
     # Reject uploads larger than this before doing any work.
     max_upload_mb: int = int(os.getenv("MAX_UPLOAD_MB", "10"))
     app_env: str = os.getenv("APP_ENV", "dev")

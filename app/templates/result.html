@@ -20,6 +20,20 @@
   </div>
 
   <div class="result-detail">
+    {% if result.extracted %}
+    <h2>Read from the label</h2>
+    <table class="fields">
+      <tbody>
+        {% for name, value in result.extracted.items() %}
+        <tr>
+          <td>{{ name }}</td>
+          <td>{{ value if value is not none else '—' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
+
     <h2>Label vs Law</h2>
     {% if result.fields %}
     <table class="fields">

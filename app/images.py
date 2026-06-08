@@ -27,9 +27,10 @@ pillow_heif.register_heif_opener()
 # but this gives a fast, clear rejection message for obvious wrong types.
 ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".heic", ".heif"}
 
-# Longest side, in pixels, after downscaling. Labels remain very legible at
-# this size and the payload to the model stays small.
-MAX_DIMENSION = 2000
+# Longest side, in pixels, after downscaling. 1568 is the documented efficiency
+# ceiling for Claude vision (larger images get resized server-side anyway), so
+# this keeps the per-call image-token cost and latency down while staying legible.
+MAX_DIMENSION = 1568
 
 # JPEG quality for the normalized output. 90 is visually lossless for text.
 JPEG_QUALITY = 90
