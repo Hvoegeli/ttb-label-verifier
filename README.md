@@ -28,6 +28,9 @@ results assist a human reviewer and are not final determinations.
 - Returns an overall verdict (FAIL beats NEEDS REVIEW beats PASS) with per-field
   reasons and citations. Mandatory checks are badged Golden Rules; advisory
   checks (like the wine sulfite declaration) never change the verdict.
+- Verifies many labels at once in batch mode (`/batch`): a results table with a
+  per-label verdict, the real cost and time of each, and an honest projection of
+  the measured average out to production volumes.
 - Measures and reports its own operating cost and latency at `/stats`.
 
 ## Architecture
@@ -134,7 +137,13 @@ fraction of a cent per label.
 
 Working core: upload (front and optional back), extraction, rule engines for all
 three beverages (distilled spirits, wine, malt beverages), the overall verdict,
-the optional label-vs-application match check, a loading indicator during the
-model call, the 71-case golden set eval with a CI gate, and cost/efficiency
-reporting. In progress: a public deployment and a manual extraction eval on real
-bottle photos.
+the optional label-vs-application match check, batch verification with a
+cost-and-time projection, a loading indicator during the model call, the 71-case
+golden set eval with a CI gate, and cost/efficiency reporting. In progress: a
+public deployment and a manual extraction eval on real bottle photos.
+
+Batch mode runs labels synchronously up to a configurable cap (`MAX_BATCH`,
+default 25) so the demo stays responsive. A production system handling the
+200 to 300 label volumes in the requirements would run the same per-label
+pipeline on a background job queue with a progress page; the synchronous demo
+proves the per-label economics and projects them out to those volumes.

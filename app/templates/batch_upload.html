@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Batch verify labels{% endblock %}
+{% block content %}
+<p><a class="back" href="/">&larr; Change type</a></p>
+<h1>Batch verify {{ (beverage_name | default('')) | lower }} labels</h1>
+<p class="lead">Choose several label photos at once. Each image is treated as one label (front face) and checked against the rules. JPG, PNG, WebP, or HEIC.</p>
+
+{% if error %}
+<div class="alert error">{{ error }}</div>
+{% endif %}
+
+<form class="upload-form" action="/batch" method="post" enctype="multipart/form-data" id="batch-form">
+  <input type="hidden" name="beverage" value="{{ beverage }}">
+
+  <label class="field">
+    <span class="field-label">Label images (up to {{ max_batch }})</span>
+    <span class="hint">Hold Shift or Command to select more than one file. One image per label.</span>
+    <input type="file" name="images" accept="image/*,.heic,.heif" multiple required>
+  </label>
+
+  <button class="primary" type="submit" id="batch-btn">Verify batch</button>
+</form>
+
+<div class="alert info batch-note">
+  <strong>Why a {{ max_batch }} label cap here?</strong> Each label is one live vision call (a few seconds), run one after another, so a very large batch would outlast a single web request. This synchronous demo proves the per-label cost and speed; a production system handling 200 to 300 labels would run them on a background job queue and show a progress page. The results below project the measured figures out to those volumes.
+</div>
+
+<div class="loading-overlay" id="loading-overlay" hidden>
+  <div class="loading-card">
+    <div class="spinner" aria-hidden="true"></div>
+    <p class="loading-title">Verifying the batch...</p>
+    <p class="hint">Each label is read and checked in turn. This can take a few seconds per label.</p>
+  </div>
+</div>
+
+<script>
+  (function () {
+    var form = document.getElementById('batch-form');
+    var overlay = document.getElementById('loading-overlay');
+    var btn = document.getElementById('batch-btn');
+    if (!form) return;
+    form.addEventListener('submit', function () {
+      if (overlay) overlay.hidden = false;
+      if (btn) { btn.disabled = true; btn.textContent = 'Verifying the batch...'; }
+    });
+  })();
+</script>
+{% endblock %}

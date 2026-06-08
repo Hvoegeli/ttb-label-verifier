@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Batch results{% endblock %}
+{% block content %}
+<p><a class="back" href="/batch?beverage={{ beverage }}">&larr; Verify another batch</a></p>
+
+<h1>Batch results</h1>
+
+<div class="batch-summary">
+  <div class="summary-stat">
+    <span class="summary-num">{{ summary.count }}</span>
+    <span class="summary-label">labels checked</span>
+  </div>
+  <div class="summary-stat verdict-pass">
+    <span class="summary-num">{{ summary.counts['PASS'] }}</span>
+    <span class="summary-label">pass</span>
+  </div>
+  <div class="summary-stat verdict-fail">
+    <span class="summary-num">{{ summary.counts['FAIL'] }}</span>
+    <span class="summary-label">fail</span>
+  </div>
+  <div class="summary-stat verdict-needs-review">
+    <span class="summary-num">{{ summary.counts['NEEDS REVIEW'] }}</span>
+    <span class="summary-label">needs review</span>
+  </div>
+  <div class="summary-stat">
+    <span class="summary-num">${{ '%.4f' % summary.total_cost }}</span>
+    <span class="summary-label">total cost</span>
+  </div>
+  <div class="summary-stat">
+    <span class="summary-num">{{ '%.1f' % summary.total_seconds }}s</span>
+    <span class="summary-label">total time</span>
+  </div>
+</div>
+
+<p class="human-note">This tool reads photos to assist a human reviewer; it is not a final determination. Any label, especially a NEEDS REVIEW one, should be confirmed against the physical bottle before action.</p>
+
+<table class="fields batch-table">
+  <thead>
+    <tr><th>Label</th><th>Verdict</th><th>Reason</th><th>Cost</th><th>Time</th></tr>
+  </thead>
+  <tbody>
+    {% for r in rows %}
+    <tr class="row-{{ r.overall|lower|replace(' ', '-') }}">
+      <td class="batch-file">{{ r.filename }}</td>
+      <td><span class="verdict-pill verdict-{{ r.overall|lower|replace(' ', '-') }}">{{ r.overall }}</span></td>
+      <td>{{ r.reason }}</td>
+      <td>{% if r.cost_usd is not none %}${{ '%.4f' % r.cost_usd }}{% else %}&mdash;{% endif %}</td>
+      <td>{{ '%.1f' % (r.processing_ms / 1000) }}s</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<div class="projection">
+  <h2>What this means at scale</h2>
+  <p class="muted">The figures below multiply the measured average from this batch
+    (${{ '%.4f' % summary.avg_cost }} and {{ '%.1f' % summary.avg_seconds }}s per label)
+    by larger volumes. Cost is exact from token usage; time is a conservative
+    serial estimate, since a production queue would run labels in parallel. See
+    <a href="/stats">Cost &amp; efficiency</a> for the labor-savings comparison.</p>
+  <table class="fields">
+    <thead>
+      <tr><th>Volume</th><th>Projected machine cost</th><th>Projected serial time</th></tr>
+    </thead>
+    <tbody>
+      {% for p in summary.projections %}
+      <tr>
+        <td>{{ '{:,}'.format(p.volume) }} labels</td>
+        <td>${{ '%.2f' % p.cost }}</td>
+        <td>{% if p.hours >= 1 %}{{ '%.1f' % p.hours }} hours{% else %}{{ '%.1f' % (p.hours * 60) }} minutes{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

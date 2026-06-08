@@ -76,8 +76,11 @@ Phased breakdown. Phase 1 is the MVP: a working single label distilled spirits p
 - [ ] Final public URL confirmed live
 - [ ] Repo pushed (feature branch first; main only on Harrison's say so)
 
+## Built beyond the original MVP
+- [x] Wine rules (27 CFR Part 4: sulfite declaration advisory, table wine alcohol exception, own standards of fill, conditional appellation)
+- [x] Beer rules (27 CFR Part 7: alcohol content optional / FMB mandatory, "ABV" abbreviation flagged, no standards of fill)
+- [x] Batch upload: synchronous up to a configurable cap (MAX_BATCH, default 25), shared per label pipeline, per-label results table, real cost/time roll-up, and an honest projection to 300 and to TTB's 150,000 annual volume. Production path for 200 to 300 documented as a background job queue.
+
 ## Post MVP TODOs (parked)
-- Wine rules (27 CFR Part 4: sulfite declaration at 10 ppm, table wine alcohol exception)
-- Beer rules (27 CFR Part 7: alcohol content optional / State gated, "ABV" abbreviation not permitted)
-- Batch upload (200 to 300 labels) as a thin wrapper over the single label path
+- Async batch for 200 to 300 labels: background job queue + progress page (the synchronous demo above caps at MAX_BATCH).
 - Vector PDF input support: parse type size (points to mm), font weight, and element positions; promote the warning Tier 2 checks (type size, bold, contrasting background, separate and apart) from advisory to hard pass/fail on PDF input. Detect vector vs raster PDF; raster falls back to the image path.

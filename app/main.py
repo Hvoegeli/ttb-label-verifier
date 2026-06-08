@@ -115,6 +115,62 @@ async def _validate_and_normalize(image: UploadFile) -> bytes:
     return normalize_to_jpeg(raw, settings.max_upload_mb)
 
 
+def _run_pipeline(jpegs: list[bytes], beverage: str) -> dict:
+    """Shared per-label core: one vision call -> rules -> verdict, cost recorded.
+
+    Both /verify (one label) and /batch (many) call this so every verdict comes
+    from the same audited path. Returns a plain dict; callers shape it for their
+    own page. Never raises: an extraction failure or an illegible image comes
+    back as a NEEDS REVIEW result with a human-readable note, because in a batch
+    one bad photo must not abort the rest.
+    """
+    started = time.perf_counter()
+    try:
+        extraction = extract_fields(jpegs, beverage)
+    except ExtractionError as exc:
+        return {
+            "overall": "NEEDS REVIEW",
+            "outcomes": [],
+            "fields": None,
+            "extraction": None,
+            "note": str(exc),
+            "processing_ms": (time.perf_counter() - started) * 1000,
+            "cost_usd": None,
+        }
+
+    processing_ms = (time.perf_counter() - started) * 1000
+    fields = extraction.fields
+
+    # Record the measured cost + latency for the efficiency report (/stats).
+    costs.record(
+        model=settings.claude_model,
+        input_tokens=extraction.input_tokens,
+        output_tokens=extraction.output_tokens,
+        cost_usd=extraction.cost_usd,
+        latency_ms=processing_ms,
+    )
+
+    # Confidence gate: never run compliance checks on an image we could not read.
+    if not fields.overall_legible:
+        outcomes = []
+        overall = "NEEDS REVIEW"
+        note = "The image was not clear enough to read confidently. Please upload a sharper, well-lit, straight-on photo."
+    else:
+        outcomes = run_rules(fields, beverage)
+        overall = overall_verdict(outcomes, fields.overall_legible)
+        note = None
+
+    return {
+        "overall": overall,
+        "outcomes": outcomes,
+        "fields": fields,
+        "extraction": extraction,
+        "note": note,
+        "processing_ms": processing_ms,
+        "cost_usd": extraction.cost_usd,
+    }
+
+
 @app.post("/verify", response_class=HTMLResponse)
 async def verify(
     request: Request,
@@ -145,47 +201,31 @@ async def verify(
     if beverage not in VALID_BEVERAGES:
         beverage = "spirits"
 
-    # One vision call reads the fields across all supplied images. Time it so we
-    # can show (and prove) the per-label latency.
-    started = time.perf_counter()
-    try:
-        extraction = extract_fields(jpegs, beverage)
-    except ExtractionError as exc:
+    # One vision call reads the fields across all supplied images, then the rule
+    # engine judges them. Shared with /batch so both compute verdicts identically.
+    pipe = _run_pipeline(jpegs, beverage)
+    fields = pipe["fields"]
+    outcomes = pipe["outcomes"]
+    overall = pipe["overall"]
+    note = pipe["note"]
+    processing_ms = pipe["processing_ms"]
+
+    # Extraction failed outright: nothing was read, so route to human review with
+    # the safe message and skip the (impossible) field display and comparisons.
+    if fields is None:
         result = {
-            "overall": "NEEDS REVIEW",
+            "overall": overall,
             "fields": [],
             "extracted": None,
             "match": None,
-            "note": f"{exc}",
-            "processing_ms": (time.perf_counter() - started) * 1000,
-            "cost_usd": None,
+            "note": note,
+            "processing_ms": processing_ms,
+            "cost_usd": pipe["cost_usd"],
         }
         return templates.TemplateResponse(
             request, "result.html",
             {"result": result, "previews": previews, "beverage": beverage},
         )
-
-    processing_ms = (time.perf_counter() - started) * 1000
-    fields = extraction.fields
-
-    # Record the measured cost + latency for the efficiency report (/stats).
-    costs.record(
-        model=settings.claude_model,
-        input_tokens=extraction.input_tokens,
-        output_tokens=extraction.output_tokens,
-        cost_usd=extraction.cost_usd,
-        latency_ms=processing_ms,
-    )
-
-    # Confidence gate: never run compliance checks on an image we could not read.
-    if not fields.overall_legible:
-        outcomes = []
-        overall = "NEEDS REVIEW"
-        note = "The image was not clear enough to read confidently. Please upload a sharper, well-lit, straight-on photo."
-    else:
-        outcomes = run_rules(fields, beverage)
-        overall = overall_verdict(outcomes, fields.overall_legible)
-        note = None
 
     # Advisory (Tier 2) notes: format/size/placement checks a photo cannot prove.
     # Surfaced for a human, never a pass/fail gate. Pulled from rule detail.
@@ -249,10 +289,143 @@ async def verify(
         "warning_diff": warning_diff,
         "note": note,
         "processing_ms": processing_ms,
-        "cost_usd": extraction.cost_usd,
+        "cost_usd": pipe["cost_usd"],
     }
     return templates.TemplateResponse(
         request,
         "result.html",
         {"result": result, "previews": previews, "beverage": beverage},
+    )
+
+
+# Volumes the batch result page projects the measured per-label figures out to:
+# the presearch headline batch and TTB's stated annual application volume.
+_PROJECTION_VOLUMES = [300, 150_000]
+
+
+def _summarize_outcomes(outcomes: list) -> str:
+    """One-line reason for the batch table: the mandatory checks that did not pass."""
+    problems = [
+        f"{o.field}: {o.reason}"
+        for o in outcomes
+        if o.status != "PASS" and getattr(o, "golden", True)
+    ]
+    return "; ".join(problems)
+
+
+@app.get("/batch", response_class=HTMLResponse)
+def batch_page(request: Request, beverage: str = "spirits"):
+    if beverage not in VALID_BEVERAGES:
+        beverage = "spirits"
+    return templates.TemplateResponse(
+        request,
+        "batch_upload.html",
+        {
+            "beverage": beverage,
+            "beverage_name": _beverage_name(beverage),
+            "max_batch": settings.max_batch,
+            "error": None,
+        },
+    )
+
+
+@app.post("/batch", response_class=HTMLResponse)
+async def batch_verify(
+    request: Request,
+    images: list[UploadFile] = File(default=[]),
+    beverage: str = Form(default="spirits"),
+):
+    """Verify many labels in one request (one image per label, front face).
+
+    Each label runs the same shared pipeline as the single-label path, in series.
+    One unreadable photo becomes a NEEDS REVIEW row rather than aborting the run.
+    A demo-sized cap keeps the request responsive; the result page projects the
+    real measured per-label cost and time out to production volumes.
+    """
+    if beverage not in VALID_BEVERAGES:
+        beverage = "spirits"
+
+    # Ignore empty file parts the browser may submit for an untouched input.
+    files = [f for f in images if f is not None and f.filename]
+
+    def _reject(message: str):
+        return templates.TemplateResponse(
+            request,
+            "batch_upload.html",
+            {
+                "beverage": beverage,
+                "beverage_name": _beverage_name(beverage),
+                "max_batch": settings.max_batch,
+                "error": message,
+            },
+            status_code=400,
+        )
+
+    if not files:
+        return _reject("Please choose at least one label image to verify.")
+    if len(files) > settings.max_batch:
+        return _reject(
+            f"This demo verifies up to {settings.max_batch} labels at once "
+            f"(you selected {len(files)}). For production volumes of 200 to 300, "
+            "the labels would run on a background queue; see the note on the batch page."
+        )
+
+    rows = []
+    for f in files:
+        try:
+            jpeg = await _validate_and_normalize(f)
+        except ImageValidationError as exc:
+            rows.append({
+                "filename": f.filename,
+                "overall": "NEEDS REVIEW",
+                "reason": str(exc),
+                "cost_usd": None,
+                "processing_ms": 0.0,
+            })
+            continue
+
+        pipe = _run_pipeline([jpeg], beverage)
+        reason = pipe["note"] or _summarize_outcomes(pipe["outcomes"]) or "All mandatory checks passed."
+        rows.append({
+            "filename": f.filename,
+            "overall": pipe["overall"],
+            "reason": reason,
+            "cost_usd": pipe["cost_usd"],
+            "processing_ms": pipe["processing_ms"],
+        })
+
+    count = len(rows)
+    counts = {"PASS": 0, "FAIL": 0, "NEEDS REVIEW": 0}
+    for r in rows:
+        counts[r["overall"]] = counts.get(r["overall"], 0) + 1
+    total_cost = sum(r["cost_usd"] or 0.0 for r in rows)
+    total_ms = sum(r["processing_ms"] for r in rows)
+    avg_cost = total_cost / count if count else 0.0
+    avg_seconds = (total_ms / count / 1000) if count else 0.0
+
+    # Honest extrapolation: multiply the measured per-label figures by larger
+    # volumes. Time assumes the same serial rate (a real queue would parallelize,
+    # so this is a conservative upper bound on wall-clock).
+    projections = [
+        {
+            "volume": v,
+            "cost": avg_cost * v,
+            "hours": (avg_seconds * v) / 3600,
+        }
+        for v in _PROJECTION_VOLUMES
+    ]
+
+    summary = {
+        "count": count,
+        "counts": counts,
+        "total_cost": total_cost,
+        "total_seconds": total_ms / 1000,
+        "avg_cost": avg_cost,
+        "avg_seconds": avg_seconds,
+        "projections": projections,
+    }
+    return templates.TemplateResponse(
+        request,
+        "batch_result.html",
+        {"rows": rows, "summary": summary, "beverage": beverage, "beverage_name": _beverage_name(beverage)},
     )

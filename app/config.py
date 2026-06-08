@@ -22,6 +22,12 @@ class Settings:
     claude_model: str = os.getenv("CLAUDE_MODEL") or "claude-haiku-4-5"
     # Reject uploads larger than this before doing any work.
     max_upload_mb: int = int(os.getenv("MAX_UPLOAD_MB", "10"))
+    # Most labels one batch request processes synchronously. The batch runs the
+    # vision call per label in series, so a large batch would outlast an HTTP
+    # request; production would move 200-300 label runs to a background queue.
+    # This cap keeps the live demo responsive while still proving the cost story
+    # (the result page projects the measured per-label figures out to any volume).
+    max_batch: int = int(os.getenv("MAX_BATCH", "25"))
     app_env: str = os.getenv("APP_ENV", "dev")
 
 

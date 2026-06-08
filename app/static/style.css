@@ -154,3 +154,17 @@ table.fields th { font-size: 14px; text-transform: uppercase; letter-spacing: 0.
 code { background: #eef0f3; padding: 1px 5px; border-radius: 4px; font-size: 14px; }
 
 .site-footer { border-top: 1px solid var(--line); color: var(--muted); font-size: 14px; padding: 20px 0; }
+
+/* Batch results */
+.batch-note { font-size: 15px; }
+.batch-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; margin: 8px 0 20px; }
+.summary-stat { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 16px; text-align: center; }
+.summary-stat.verdict-pass { background: var(--pass-bg); border-color: #bfe3cb; }
+.summary-stat.verdict-fail { background: var(--fail-bg); border-color: #f1c4bf; }
+.summary-stat.verdict-needs-review { background: var(--review-bg); border-color: #e7d39a; }
+.summary-num { display: block; font-size: 26px; font-weight: 800; line-height: 1.1; }
+.summary-label { display: block; font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin-top: 4px; }
+.batch-table .batch-file { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 14px; word-break: break-all; }
+.verdict-pill { display: inline-block; font-size: 13px; font-weight: 700; border-radius: 999px; padding: 2px 10px; white-space: nowrap; }
+.projection { margin-top: 28px; }
+.projection .muted { font-size: 15px; }
