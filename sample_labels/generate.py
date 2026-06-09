@@ -36,6 +36,10 @@ MANIFEST = BASE / "manifest.json"
 WARNING_TITLECASE_HEADER = CANONICAL.replace("GOVERNMENT WARNING", "Government Warning", 1)
 # A warning read cleanly but with the wording altered: a genuine violation.
 WARNING_GARBLED = CANONICAL.replace("health problems.", "health issues.")
+# The whole warning printed in capital letters. This is compliant and is what most
+# real bottles print (27 CFR 16.22 requires only the header to be capitalized), so
+# it must PASS. It is the real-world case the project found and corrected.
+WARNING_ALLCAPS = CANONICAL.upper()
 
 
 # ---- field builders (full field dicts with legibility flags set true) ----
@@ -173,6 +177,20 @@ SPECS = [
      "planted": "Unrecognized style with no statement of composition routes to a human.",
      "fields": _beer(brand_name="ZAP SELTZER", class_type="Sparkle Pop",
                     alcohol_content="5% Alc/Vol")},
+
+    # Edge cases and additional failures -------------------------------------
+    {"id": "spirits_edge_allcaps_warning", "beverage": "spirits", "expected": "PASS",
+     "planted": "Whole warning in capital letters is compliant (27 CFR 16.22 caps only the header).",
+     "fields": _spirits(brand_name="CAPITOL RESERVE", government_warning=WARNING_ALLCAPS)},
+    {"id": "wine_edge_magnum", "beverage": "wine", "expected": "PASS",
+     "planted": "1.5 L magnum is an authorized WINE fill (27 CFR 4.72) though not a spirits size.",
+     "fields": _wine(brand_name="GRAND OAK", net_contents="1.5 L")},
+    {"id": "beer_fail_missing_warning", "beverage": "beer", "expected": "FAIL",
+     "planted": "No Government Warning at all (absent, not garbled) -> fail (27 CFR Part 16).",
+     "fields": _beer(brand_name="NO LABEL ALE", government_warning=None)},
+    {"id": "wine_fail_missing_fields", "beverage": "wine", "expected": "FAIL",
+     "planted": "Sparse label missing net contents and bottler name/address (27 CFR 4.32).",
+     "fields": _wine(brand_name="BARE BOTTLE", net_contents=None, name_and_address=None)},
 ]
 
 
