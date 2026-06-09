@@ -24,7 +24,7 @@ from . import costs, matcher
 from .config import settings
 from .extractor import ExtractionError, extract_fields
 from .images import ImageValidationError, has_allowed_extension, normalize_to_jpeg
-from .rules import overall_verdict, run_rules
+from .rules import FAIL, PASS, REVIEW, overall_verdict, run_rules
 
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -279,6 +279,16 @@ async def verify(
     elif beverage == "beer" and fields.statement_of_composition:
         extracted["Statement of composition"] = fields.statement_of_composition
 
+    # A quick tally of the mandatory (Golden Rule) checks for the result header,
+    # so a reviewer sees "4 of 5 mandatory checks passed" at a glance.
+    golden = [o for o in outcomes if getattr(o, "golden", True)]
+    tally = {
+        "total": len(golden),
+        "pass": sum(1 for o in golden if o.status == PASS),
+        "fail": sum(1 for o in golden if o.status == FAIL),
+        "review": sum(1 for o in golden if o.status == REVIEW),
+    }
+
     result = {
         "overall": overall,
         "fields": [o.as_row() for o in outcomes],
@@ -288,6 +298,7 @@ async def verify(
         "advisories": advisories or None,
         "warning_diff": warning_diff,
         "note": note,
+        "tally": tally,
         "processing_ms": processing_ms,
         "cost_usd": pipe["cost_usd"],
     }

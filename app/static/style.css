@@ -83,9 +83,21 @@ button.primary:hover { background: #0f2647; }
 .alert.info { background: #eaf1fb; color: var(--navy); border: 1px solid #b9cdec; }
 
 /* Verdict banner */
-.verdict { border-radius: 12px; padding: 22px 24px; margin: 12px 0 18px; display: flex; align-items: baseline; justify-content: space-between; }
-.verdict-label { font-size: 30px; font-weight: 800; letter-spacing: 0.02em; }
-.verdict-time { font-size: 15px; color: var(--muted); }
+.verdict { border-radius: 12px; padding: 20px 24px; margin: 12px 0 8px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.verdict-main { display: flex; align-items: center; gap: 16px; }
+.verdict-icon { flex: 0 0 auto; width: 46px; height: 46px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 800; line-height: 1; background: rgba(255,255,255,0.6); }
+.verdict-text { display: flex; flex-direction: column; gap: 2px; }
+.verdict-label { font-size: 28px; font-weight: 800; letter-spacing: 0.02em; line-height: 1.1; }
+.verdict-sub { font-size: 15px; opacity: 0.92; max-width: 46ch; }
+.verdict-time { font-size: 14px; color: var(--muted); white-space: nowrap; }
+.rule-tally { margin: 0 0 18px; font-size: 16px; color: var(--muted); }
+.rule-tally strong { color: var(--ink); }
+.tally-fail { color: var(--fail); font-weight: 700; }
+.tally-review { color: var(--review); font-weight: 700; }
+@media (max-width: 560px) {
+  .verdict { flex-direction: column; align-items: flex-start; }
+  .verdict-sub { max-width: none; }
+}
 .verdict-pass { background: var(--pass-bg); color: var(--pass); }
 .verdict-fail { background: var(--fail-bg); color: var(--fail); }
 .verdict-needs-review { background: var(--review-bg); color: var(--review); }
@@ -168,3 +180,16 @@ code { background: #eef0f3; padding: 1px 5px; border-radius: 4px; font-size: 14p
 .verdict-pill { display: inline-block; font-size: 13px; font-weight: 700; border-radius: 999px; padding: 2px 10px; white-space: nowrap; }
 .projection { margin-top: 28px; }
 .projection .muted { font-size: 15px; }
+
+/* Print: a reviewer may save or print a verdict. Drop the chrome and keep the
+   record clean, with verdict colors preserved. */
+@media print {
+  .site-header, .site-footer, .back, .loading-overlay, .optional, form { display: none !important; }
+  body { background: #fff; font-size: 14px; }
+  main.container { padding-top: 0; }
+  .verdict, .summary-stat, .badge-golden, .badge-advisory, .verdict-pill,
+  .advisory, .warning-diff { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .result-grid { grid-template-columns: 1fr 1.4fr; }
+  table.fields { font-size: 12px; }
+  a { color: inherit; text-decoration: none; }
+}

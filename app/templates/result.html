@@ -4,11 +4,21 @@
 <p><a class="back" href="/upload?beverage={{ beverage }}">&larr; Check another label</a></p>
 
 <div class="verdict verdict-{{ result.overall|lower|replace(' ', '-') }}">
-  <span class="verdict-label">{{ result.overall }}</span>
+  <div class="verdict-main">
+    <span class="verdict-icon" aria-hidden="true">{% if result.overall == 'PASS' %}&check;{% elif result.overall == 'FAIL' %}&times;{% else %}!{% endif %}</span>
+    <div class="verdict-text">
+      <span class="verdict-label">{{ result.overall }}</span>
+      <span class="verdict-sub">{% if result.overall == 'PASS' %}Meets every mandatory federal requirement that can be checked from an image.{% elif result.overall == 'FAIL' %}At least one mandatory requirement is not met. See the failed rows below.{% else %}One or more items need a person to confirm before this label can clear.{% endif %}</span>
+    </div>
+  </div>
   {% if result.processing_ms is not none %}
-  <span class="verdict-time">verified in {{ '%.1f' % (result.processing_ms / 1000) }}s{% if result.cost_usd is not none %} &middot; cost ${{ '%.4f' % result.cost_usd }}{% endif %}</span>
+  <span class="verdict-time">verified in {{ '%.1f' % (result.processing_ms / 1000) }}s{% if result.cost_usd is not none %} &middot; ${{ '%.4f' % result.cost_usd }}{% endif %}</span>
   {% endif %}
 </div>
+
+{% if result.tally and result.tally.total %}
+<p class="rule-tally"><strong>{{ result.tally.pass }} of {{ result.tally.total }}</strong> mandatory checks passed{% if result.tally.fail %} &middot; <span class="tally-fail">{{ result.tally.fail }} failed</span>{% endif %}{% if result.tally.review %} &middot; <span class="tally-review">{{ result.tally.review }} need review</span>{% endif %}.</p>
+{% endif %}
 
 {% if result.note %}
 <div class="alert info">{{ result.note }}</div>
