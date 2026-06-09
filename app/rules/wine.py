@@ -19,7 +19,7 @@ import re
 
 from . import warning
 from .base import FAIL, PASS, REVIEW, RuleOutcome
-from .fill import parse_ml
+from .fill import nearest_sizes, parse_ml
 
 # Authorized metric standards of fill for wine (mL), 27 CFR 4.72, including the
 # January 2025 additions (T.D. TTB-203). Containers over 3 L are allowed in whole
@@ -136,10 +136,14 @@ def check_fill(fields) -> RuleOutcome:
     if ml > 3000:
         if abs(ml - round(ml / 1000) * 1000) < 0.5:
             return RuleOutcome("Net contents", PASS, f"{raw} is a whole-liter size over 3 L, which is authorized.", "27 CFR 4.72")
-        return RuleOutcome("Net contents", FAIL, f"{raw} ({ml:.0f} mL) is over 3 L but not a whole-liter size.", "27 CFR 4.72")
+        return RuleOutcome("Net contents", FAIL, f"{raw} is over 3 L, where wine must be a whole number of liters (for example 4 L or 5 L).", "27 CFR 4.72")
     if any(abs(ml - size) < 0.5 for size in AUTHORIZED_ML):
-        return RuleOutcome("Net contents", PASS, f"{raw} is an authorized standard of fill.", "27 CFR 4.72")
-    return RuleOutcome("Net contents", FAIL, f"{raw} ({ml:.0f} mL) is not an authorized wine standard of fill.", "27 CFR 4.72", {"authorized_ml": sorted(AUTHORIZED_ML, reverse=True)})
+        return RuleOutcome("Net contents", PASS, f"{raw} is an authorized bottle size.", "27 CFR 4.72")
+    reason = f"{raw} is not an authorized wine bottle size."
+    nearest = nearest_sizes(ml, AUTHORIZED_ML)
+    if nearest:
+        reason += f" The nearest authorized sizes are {nearest}."
+    return RuleOutcome("Net contents", FAIL, reason, "27 CFR 4.72", {"authorized_ml": sorted(AUTHORIZED_ML, reverse=True)})
 
 
 def check_appellation(fields) -> RuleOutcome:

@@ -61,7 +61,7 @@
           <td>{{ f.name }}{% if f.golden %} <span class="badge-golden" title="Mandatory hard gate">Golden Rule</span>{% else %} <span class="badge-advisory" title="Informational; does not change the verdict">Advisory</span>{% endif %}</td>
           <td>{{ f.status }}</td>
           <td>{{ f.reason }}</td>
-          <td>{{ f.citation }}</td>
+          <td>{{ f.citation }}{% if f.citation_plain %}<span class="citation-plain">{{ f.citation_plain }}</span>{% endif %}</td>
         </tr>
         {% endfor %}
       </tbody>

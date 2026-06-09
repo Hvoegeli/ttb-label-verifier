@@ -21,6 +21,26 @@ AUTHORIZED_ML = {
 _QTY = re.compile(r"(\d+(?:\.\d+)?)\s*(ml|millilit\w*|cl|litre|liter|lit\w*|l)\b")
 
 
+def fmt_ml(value: float) -> str:
+    """Format a millilitre amount the way a person reads it ('750 mL', '1 L', '1.75 L')."""
+    if value >= 1000:
+        litres = value / 1000
+        return f"{litres:g} L"
+    return f"{value:g} mL"
+
+
+def nearest_sizes(ml: float, authorized: set) -> str:
+    """The closest authorized sizes below and above a value, as a plain phrase."""
+    below = max((s for s in authorized if s <= ml), default=None)
+    above = min((s for s in authorized if s >= ml), default=None)
+    parts = []
+    if below is not None:
+        parts.append(fmt_ml(below))
+    if above is not None and above != below:
+        parts.append(fmt_ml(above))
+    return " and ".join(parts)
+
+
 def parse_ml(text: str) -> float | None:
     """Parse a metric net-contents value into milliliters, or None if not found."""
     if not text:
@@ -49,11 +69,13 @@ def check(fields) -> RuleOutcome:
         return RuleOutcome(FIELD, REVIEW, f"Could not read a metric volume from '{raw}'. Verify by hand.", CITATION)
 
     if any(abs(ml - size) < 0.5 for size in AUTHORIZED_ML):
-        return RuleOutcome(FIELD, PASS, f"{raw} is an authorized standard of fill.", CITATION)
+        return RuleOutcome(FIELD, PASS, f"{raw} is an authorized bottle size.", CITATION)
 
+    reason = f"{raw} is not an authorized bottle size."
+    nearest = nearest_sizes(ml, AUTHORIZED_ML)
+    if nearest:
+        reason += f" The nearest authorized sizes are {nearest}."
     return RuleOutcome(
-        FIELD, FAIL,
-        f"{raw} ({ml:.0f} mL) is not an authorized standard of fill.",
-        CITATION,
+        FIELD, FAIL, reason, CITATION,
         {"authorized_ml": sorted(AUTHORIZED_ML, reverse=True)},
     )

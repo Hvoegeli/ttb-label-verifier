@@ -189,3 +189,19 @@ def test_fail_beats_review():
 
 def test_illegible_forces_review_even_with_no_outcomes():
     assert overall_verdict([], overall_legible=False) == REVIEW
+
+
+# --- Readability of reasons and citations ---
+
+def test_fill_failure_is_plain_and_suggests_nearest_sizes():
+    out = fill.check(fields(net_contents="800 mL"))
+    assert out.status == FAIL
+    assert "(800 mL)" not in out.reason  # no duplicated value
+    assert "nearest authorized sizes" in out.reason.lower()
+    assert "750 mL" in out.reason and "900 mL" in out.reason
+
+
+def test_rule_row_carries_plain_citation_gloss():
+    row = fill.check(fields(net_contents="800 mL")).as_row()
+    assert row["citation"] == "27 CFR 5.203"
+    assert row["citation_plain"] == "Authorized bottle size"

@@ -118,6 +118,7 @@ button.primary:hover { background: #0f2647; }
 table.fields { width: 100%; border-collapse: collapse; font-size: 16px; }
 table.fields th, table.fields td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
 table.fields th { font-size: 14px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+.citation-plain { display: block; font-size: 13px; color: var(--muted); margin-top: 2px; }
 .row-pass td:nth-child(2) { color: var(--pass); font-weight: 700; }
 .row-fail td:nth-child(2) { color: var(--fail); font-weight: 700; }
 .row-needs-review td:nth-child(2) { color: var(--review); font-weight: 700; }

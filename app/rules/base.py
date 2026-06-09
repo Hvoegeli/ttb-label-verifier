@@ -12,6 +12,19 @@ PASS = "PASS"
 FAIL = "FAIL"
 REVIEW = "NEEDS REVIEW"
 
+# Plain-language gloss shown next to the CFR citation, so a non-specialist sees
+# what each rule actually checks (the citation stays for the TTB reviewer). Keyed
+# by the rule's human field name, which is unambiguous across beverages.
+FIELD_GLOSS = {
+    "Mandatory fields": "All required information is present",
+    "Class/type": "Approved kind of product",
+    "Alcohol content": "Alcohol content statement",
+    "Net contents": "Authorized bottle size",
+    "Government warning": "Health warning statement",
+    "Appellation": "Appellation of origin",
+    "Sulfite declaration": "Sulfite declaration",
+}
+
 
 @dataclass
 class RuleOutcome:
@@ -32,6 +45,7 @@ class RuleOutcome:
             "status": self.status,
             "reason": self.reason,
             "citation": self.citation,
+            "citation_plain": FIELD_GLOSS.get(self.field, ""),
             "golden": self.golden,
         }
 
