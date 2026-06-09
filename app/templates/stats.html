@@ -48,6 +48,16 @@
   </tbody>
 </table>
 
+{% if triage %}
+<h2>Triage: where human attention goes</h2>
+<div class="triage-bar" role="img" aria-label="{{ '%.0f'|format(triage.cleared_pct) }} percent cleared, {{ '%.0f'|format(triage.flagged_pct) }} percent flagged">
+  <span class="triage-cleared" style="width: {{ triage.cleared_pct }}%">{% if triage.cleared_pct >= 12 %}{{ "%.0f"|format(triage.cleared_pct) }}% cleared{% endif %}</span>
+  <span class="triage-flagged" style="width: {{ triage.flagged_pct }}%">{% if triage.flagged_pct >= 12 %}{{ "%.0f"|format(triage.flagged_pct) }}% flagged{% endif %}</span>
+</div>
+<p>Of <strong>{{ triage.total }}</strong> labels processed, the tool cleared <strong>{{ triage.cleared }}</strong> ({{ "%.0f"|format(triage.cleared_pct) }}%) as PASS and flagged <strong>{{ triage.flagged }}</strong> ({{ "%.0f"|format(triage.flagged_pct) }}%: {{ triage.fail }} FAIL, {{ triage.review }} NEEDS REVIEW) for a person.</p>
+<p class="hint">The efficiency is triage, not replacement. A reviewer spends their time on the flagged minority and spot-checks a sample of the cleared majority, instead of screening every label from scratch.</p>
+{% endif %}
+
 <h2>Labor comparison (illustrative)</h2>
 <p class="hint">
   Based on a manual review of <strong>{{ minutes_per_label }} min</strong> at a loaded rate of

@@ -34,8 +34,12 @@ def cost_usd(model: str, input_tokens: int, output_tokens: int) -> float:
     return input_tokens / 1_000_000 * price["input"] + output_tokens / 1_000_000 * price["output"]
 
 
-def record(model: str, input_tokens: int, output_tokens: int, cost_usd: float, latency_ms: float) -> None:
-    """Append one usage record to the metrics log (best-effort; never breaks a request)."""
+def record(model: str, input_tokens: int, output_tokens: int, cost_usd: float, latency_ms: float, verdict: str | None = None) -> None:
+    """Append one usage record to the metrics log (best-effort; never breaks a request).
+
+    `verdict` (PASS / FAIL / NEEDS REVIEW) is logged so /stats can show the triage
+    split: how much of the volume the tool cleared versus flagged for a person.
+    """
     rec = {
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "model": model,
@@ -43,6 +47,7 @@ def record(model: str, input_tokens: int, output_tokens: int, cost_usd: float, l
         "output_tokens": output_tokens,
         "cost_usd": round(cost_usd, 6),
         "latency_ms": round(latency_ms, 1),
+        "verdict": verdict,
     }
     try:
         METRICS_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -78,7 +83,7 @@ def aggregate() -> dict:
             "count": 0, "total_cost_usd": 0.0, "avg_cost_usd": 0.0,
             "total_input_tokens": 0, "total_output_tokens": 0,
             "avg_latency_ms": 0.0, "p95_latency_ms": 0.0,
-            "by_model": {}, "first": None, "last": None,
+            "by_model": {}, "by_verdict": {}, "first": None, "last": None,
         }
 
     total_cost = sum(r.get("cost_usd", 0.0) for r in records)
@@ -93,6 +98,14 @@ def aggregate() -> dict:
         m["count"] += 1
         m["cost_usd"] += r.get("cost_usd", 0.0)
 
+    # Verdict split for the triage story. Only records that carry a verdict count
+    # (older records without one are simply not part of the triage tally).
+    by_verdict: dict[str, int] = {}
+    for r in records:
+        v = r.get("verdict")
+        if v:
+            by_verdict[v] = by_verdict.get(v, 0) + 1
+
     return {
         "count": count,
         "total_cost_usd": total_cost,
@@ -102,6 +115,7 @@ def aggregate() -> dict:
         "avg_latency_ms": sum(latencies) / count,
         "p95_latency_ms": latencies[p95_index],
         "by_model": by_model,
+        "by_verdict": by_verdict,
         "first": records[0].get("timestamp"),
         "last": records[-1].get("timestamp"),
     }

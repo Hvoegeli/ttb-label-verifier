@@ -58,6 +58,26 @@ def stats(request: Request, minutes_per_label: float = 7.5, hourly_rate: float =
     loaded hourly rate) are adjustable via query string so a reviewer can plug in
     their own figures; the per-label machine cost is real, from logged token usage."""
     agg = costs.aggregate()
+
+    # Triage split: how much volume the tool cleared (PASS) vs flagged for a
+    # person (FAIL + NEEDS REVIEW). Computed only over records that carry a
+    # verdict, so the percentages are honest about their denominator.
+    bv = agg.get("by_verdict", {})
+    triage_total = sum(bv.values())
+    triage = None
+    if triage_total:
+        cleared = bv.get("PASS", 0)
+        flagged = triage_total - cleared
+        triage = {
+            "total": triage_total,
+            "cleared": cleared,
+            "flagged": flagged,
+            "fail": bv.get("FAIL", 0),
+            "review": bv.get("NEEDS REVIEW", 0),
+            "cleared_pct": 100.0 * cleared / triage_total,
+            "flagged_pct": 100.0 * flagged / triage_total,
+        }
+
     manual_cost_per_label = (minutes_per_label / 60.0) * hourly_rate
     machine_cost_per_label = agg["avg_cost_usd"]
     savings_per_label = manual_cost_per_label - machine_cost_per_label
@@ -65,6 +85,7 @@ def stats(request: Request, minutes_per_label: float = 7.5, hourly_rate: float =
     annual_labels = 150_000  # TTB's stated annual application volume
     context = {
         "agg": agg,
+        "triage": triage,
         "minutes_per_label": minutes_per_label,
         "hourly_rate": hourly_rate,
         "manual_cost_per_label": manual_cost_per_label,
@@ -141,15 +162,6 @@ def _run_pipeline(jpegs: list[bytes], beverage: str) -> dict:
     processing_ms = (time.perf_counter() - started) * 1000
     fields = extraction.fields
 
-    # Record the measured cost + latency for the efficiency report (/stats).
-    costs.record(
-        model=settings.claude_model,
-        input_tokens=extraction.input_tokens,
-        output_tokens=extraction.output_tokens,
-        cost_usd=extraction.cost_usd,
-        latency_ms=processing_ms,
-    )
-
     # Confidence gate: never run compliance checks on an image we could not read.
     if not fields.overall_legible:
         outcomes = []
@@ -159,6 +171,17 @@ def _run_pipeline(jpegs: list[bytes], beverage: str) -> dict:
         outcomes = run_rules(fields, beverage)
         overall = overall_verdict(outcomes, fields.overall_legible)
         note = None
+
+    # Record the measured cost + latency + verdict for the efficiency report
+    # (/stats). Done after the verdict so the triage split can be logged.
+    costs.record(
+        model=settings.claude_model,
+        input_tokens=extraction.input_tokens,
+        output_tokens=extraction.output_tokens,
+        cost_usd=extraction.cost_usd,
+        latency_ms=processing_ms,
+        verdict=overall,
+    )
 
     return {
         "overall": overall,

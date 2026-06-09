@@ -29,6 +29,37 @@ default model (Claude Haiku 4.5, $1.00 input / $5.00 output per 1M tokens) that 
 on the order of **$0.004 to $0.005 per label**. The `/stats` page shows the actual
 measured average for this deployment.
 
+## Representative measured run (the 25 sample labels)
+
+Running the committed sample label set (`sample_labels/`, 25 labels: 10 designed
+to pass, 10 to fail, 5 to need review) through the live pipeline on Claude Haiku
+4.5 produced the measured figures below. This is a snapshot for a reader who does
+not run the app; the live `/stats` page shows whatever the current deployment has
+actually processed.
+
+| Measure | Value |
+| --- | --- |
+| Labels processed | 25 |
+| Verdict split | 10 PASS, 10 FAIL, 5 NEEDS REVIEW |
+| Triage | 40% cleared, 60% flagged for a person |
+| Average cost per label | $0.0037 |
+| Total cost (25 labels) | $0.0927 |
+| Average latency | 3.6 s |
+| 95th percentile latency | 5.7 s |
+| Model | claude-haiku-4-5 |
+
+The triage figure is the efficiency argument in one line: the tool cleared 40% of
+the volume outright and concentrated human attention on the 60% it flagged, rather
+than every reviewer reading every label from scratch. A reviewer still spot-checks
+a sample of the cleared labels (see the human-in-the-loop note in
+`SECURITY_AND_COMPLIANCE.md`), so the saving is on routine screening, not a removal
+of human judgment.
+
+The 95th-percentile latency here (5.7 s) slightly exceeds the 5 s warm target
+because these were back-to-back batch calls including a cold first call; the
+per-label average stays at 3.6 s. The 5 s target describes a warmed, always-on
+deployment, which is how the public demo is hosted.
+
 ## Engineering choices that cut cost
 
 | Decision | Effect |

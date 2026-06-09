@@ -246,3 +246,29 @@ def test_stats_records_and_aggregates(monkeypatch):
     assert r.status_code == 200
     assert "labels verified" in r.text
     assert "cheaper per label" in r.text  # labor comparison rendered
+
+
+def test_verify_records_verdict_for_triage(monkeypatch):
+    # A compliant label is logged with its verdict so /stats can show triage.
+    monkeypatch.setattr(main_module, "extract_fields", lambda *a, **k: _fake_result())
+    files = {"image": ("label.png", _png_bytes(), "image/png")}
+    client.post("/verify", files=files, data={"beverage": "spirits"})
+    agg = costs_module.aggregate()
+    assert agg["by_verdict"].get("PASS") == 1
+
+
+def test_stats_shows_triage_split(monkeypatch):
+    # One PASS and one FAIL -> /stats reports the cleared vs flagged split.
+    monkeypatch.setattr(main_module, "extract_fields", lambda *a, **k: _fake_result())
+    client.post("/verify", files={"image": ("a.png", _png_bytes(), "image/png")}, data={"beverage": "spirits"})
+    monkeypatch.setattr(main_module, "extract_fields", lambda *a, **k: _fake_result(net_contents="800 mL"))
+    client.post("/verify", files={"image": ("b.png", _png_bytes(), "image/png")}, data={"beverage": "spirits"})
+
+    agg = costs_module.aggregate()
+    assert agg["by_verdict"].get("PASS") == 1
+    assert agg["by_verdict"].get("FAIL") == 1
+
+    r = client.get("/stats")
+    assert r.status_code == 200
+    assert "Triage" in r.text
+    assert "cleared" in r.text and "flagged" in r.text

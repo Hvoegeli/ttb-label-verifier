@@ -172,6 +172,10 @@ table.fields th { font-size: 14px; text-transform: uppercase; letter-spacing: 0.
 .cost-form label { display: flex; flex-direction: column; gap: 4px; font-size: 14px; color: var(--muted); }
 .cost-form input { font-size: 17px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; width: 150px; }
 .cost-form button.primary { font-size: 16px; padding: 10px 20px; }
+.triage-bar { display: flex; height: 38px; border-radius: 8px; overflow: hidden; margin: 12px 0; border: 1px solid var(--line); }
+.triage-bar span { display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: #fff; white-space: nowrap; }
+.triage-cleared { background: var(--pass); }
+.triage-flagged { background: var(--review); }
 .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; margin: 20px 0; }
 .stat { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 18px; display: flex; flex-direction: column; gap: 6px; }
 .stat-num { font-size: 26px; font-weight: 700; color: var(--navy); }
