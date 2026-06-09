@@ -64,7 +64,8 @@ deployment, which is how the public demo is hosted.
 
 | Decision | Effect |
 | --- | --- |
-| **Default to Claude Haiku 4.5** instead of Sonnet or Opus | Haiku is $1/$5 per 1M tokens, vs Sonnet $3/$15 (3x) and Opus $5/$25 (5x). In live testing Haiku transcribed the Government Warning verbatim, so the cheapest model met the accuracy bar. One env var (`CLAUDE_MODEL`) escalates to Sonnet only if a future eval shows it is needed. |
+| **Default to Claude Haiku 4.5** instead of Sonnet or Opus | Haiku is $1/$5 per 1M tokens, vs Sonnet $3/$15 (3x) and Opus $5/$25 (5x). In live testing Haiku transcribed the Government Warning verbatim on clean labels, so the cheapest model met the accuracy bar for the common case. |
+| **Confidence-based escalation, not a blanket upgrade** | Rather than run every label on the expensive model, the cheap model reads first and the label is re-read on Sonnet only when the first read is low confidence or the warning does not match the statute (a likely misread). The 3x cost is paid only on the minority of hard labels, so average cost stays near the Haiku figure while accuracy on the hard cases improves. Set `ENABLE_ESCALATION=false` to disable. |
 | **Downscale images to 1568px long edge** | Image token cost scales with pixel count. 1568px is the documented efficiency ceiling (larger images are resized server-side anyway), so full-resolution phone photos do not inflate cost. |
 | **One model call, no agent framework** | A deterministic pipeline makes exactly one inference call per label. No agent loop, no chained calls, no repeated tool round-trips, each of which would multiply tokens. |
 | **Capped output tokens** (`max_tokens = 1024`) | The structured JSON is small; the cap prevents a runaway response from consuming budget. |

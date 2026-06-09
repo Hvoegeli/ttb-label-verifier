@@ -20,6 +20,11 @@ class Settings:
     # $1/$5 per 1M tokens). Override with CLAUDE_MODEL=claude-sonnet-4-6 if Haiku
     # misreads small warning text too often. Confirmed via the claude-api reference.
     claude_model: str = os.getenv("CLAUDE_MODEL") or "claude-haiku-4-5"
+    # Robustness: when the cheap default model returns a low-confidence read (or a
+    # warning that does not match the statute, a likely misread), re-read once with
+    # this stronger model. The 3x cost is paid only on the hard labels that need it.
+    escalation_model: str = os.getenv("ESCALATION_MODEL") or "claude-sonnet-4-6"
+    enable_escalation: bool = os.getenv("ENABLE_ESCALATION", "true").lower() not in ("0", "false", "no")
     # Reject uploads larger than this before doing any work.
     max_upload_mb: int = int(os.getenv("MAX_UPLOAD_MB", "10"))
     # Most labels one batch request processes synchronously. The batch runs the

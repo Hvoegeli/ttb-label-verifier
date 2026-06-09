@@ -70,6 +70,12 @@ Set in `.env` (see `.env.example`):
 - `ANTHROPIC_API_KEY` (required)
 - `CLAUDE_MODEL` (optional; defaults to `claude-haiku-4-5`, the cheapest vision
   model; set to `claude-sonnet-4-6` for higher accuracy at higher cost)
+- `ESCALATION_MODEL` (optional; defaults to `claude-sonnet-4-6`) and
+  `ENABLE_ESCALATION` (optional, default on): when the default model returns a
+  low-confidence read or a Government Warning that does not match the statute,
+  the label is automatically re-read once with the stronger escalation model.
+  The extra cost is paid only on the hard labels that need it; set
+  `ENABLE_ESCALATION=false` to turn it off.
 - `MAX_UPLOAD_MB` (optional, default 10)
 
 ## Tests and evaluation

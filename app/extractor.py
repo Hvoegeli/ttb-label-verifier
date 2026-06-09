@@ -18,6 +18,8 @@ import anthropic
 from . import costs
 from .config import settings
 from .models import ExtractedFields  # re-exported for callers/tests
+from .rules.base import normalize_ws
+from .rules.warning import CANONICAL
 
 # Cap output: the JSON is small, so a low ceiling saves tokens and prevents a
 # runaway response from eating the budget.
@@ -32,6 +34,8 @@ class ExtractionResult:
     input_tokens: int
     output_tokens: int
     cost_usd: float
+    model: str = ""          # the model whose result this is (or "primary+escalation")
+    escalated: bool = False  # whether a low-confidence read triggered a stronger re-read
 
 
 class ExtractionError(Exception):
@@ -132,21 +136,8 @@ def _get_client() -> anthropic.Anthropic:
     return _client
 
 
-def extract_fields(images: bytes | Sequence[bytes], beverage: str = "spirits") -> ExtractionResult:
-    """Send one or more normalized JPEGs of the same container to the model and
-    return the structured fields + cost.
-
-    Accepts a single image (bytes) or several (e.g. the front and back of one
-    bottle, whose mandatory fields are split across faces). All images go in one
-    call, so the model reconciles them and we pay for one extraction. The schema
-    and prompt adapt to the beverage so wine and beer specific fields are read.
-
-    Raises ExtractionError (message safe to display) on any API failure or if the
-    model does not return the forced tool call.
-    """
-    if isinstance(images, (bytes, bytearray)):
-        images = [images]
-
+def _extract_once(images: Sequence[bytes], beverage: str, model: str) -> ExtractionResult:
+    """One vision call with a specific model. Raises ExtractionError on failure."""
     image_blocks = [
         {
             "type": "image",
@@ -162,7 +153,7 @@ def extract_fields(images: bytes | Sequence[bytes], beverage: str = "spirits") -
     tool = _build_tool(beverage)
     try:
         response = _get_client().messages.create(
-            model=settings.claude_model,
+            model=model,
             max_tokens=MAX_TOKENS,
             tools=[tool],
             tool_choice={"type": "tool", "name": tool["name"]},
@@ -192,5 +183,64 @@ def extract_fields(images: bytes | Sequence[bytes], beverage: str = "spirits") -
         fields=fields,
         input_tokens=input_tokens,
         output_tokens=output_tokens,
-        cost_usd=costs.cost_usd(settings.claude_model, input_tokens, output_tokens),
+        cost_usd=costs.cost_usd(model, input_tokens, output_tokens),
+        model=model,
     )
+
+
+def _should_escalate(fields: ExtractedFields) -> bool:
+    """Whether a low-confidence or likely-misread first pass warrants a stronger re-read.
+
+    Two triggers, both grounded in the real-photo eval finding that the verbatim
+    Government Warning is the weak point:
+      1. The model's own legibility flags say the read was poor.
+      2. The warning is reported legible but does not match the statute verbatim,
+         which is often a misread of a compliant label rather than a real defect.
+    """
+    if not fields.overall_legible or not fields.warning_legible:
+        return True
+    gw = fields.government_warning
+    if gw and normalize_ws(gw).lower() != normalize_ws(CANONICAL).lower():
+        return True
+    return False
+
+
+def extract_fields(images: bytes | Sequence[bytes], beverage: str = "spirits") -> ExtractionResult:
+    """Read one or more normalized JPEGs of the same container into structured fields.
+
+    Accepts a single image (bytes) or several (e.g. the front and back of one
+    bottle, whose mandatory fields are split across faces). All images go in one
+    call, so the model reconciles them and we pay for one extraction. The schema
+    and prompt adapt to the beverage so wine and beer specific fields are read.
+
+    Robustness: the cheap default model reads first. If that read is low confidence
+    or the warning does not match the statute, re-read once with the stronger
+    escalation model and return that, summing the cost. The extra cost is paid only
+    on the hard labels that need it. Set ENABLE_ESCALATION=false to disable.
+
+    Raises ExtractionError (message safe to display) on any API failure or if the
+    model does not return the forced tool call.
+    """
+    if isinstance(images, (bytes, bytearray)):
+        images = [images]
+
+    primary = settings.claude_model
+    result = _extract_once(images, beverage, primary)
+
+    esc_model = settings.escalation_model
+    if settings.enable_escalation and esc_model and esc_model != primary and _should_escalate(result.fields):
+        try:
+            escalated = _extract_once(images, beverage, esc_model)
+        except ExtractionError:
+            # Escalation failed (rate limit, etc.): keep the primary read rather than
+            # failing the whole label. The rule engine still gets the first pass.
+            return result
+        return ExtractionResult(
+            fields=escalated.fields,
+            input_tokens=result.input_tokens + escalated.input_tokens,
+            output_tokens=result.output_tokens + escalated.output_tokens,
+            cost_usd=result.cost_usd + escalated.cost_usd,
+            model=f"{primary}+{esc_model}",
+            escalated=True,
+        )
+    return result

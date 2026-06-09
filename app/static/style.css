@@ -97,6 +97,7 @@ button.primary:hover { background: #0f2647; }
 .verdict-sub { font-size: 15px; opacity: 0.92; max-width: 46ch; }
 .verdict-time { font-size: 14px; color: var(--muted); white-space: nowrap; }
 .rule-tally { margin: 0 0 18px; font-size: 16px; color: var(--muted); }
+.escalated-note { margin: 0 0 16px; font-size: 14px; color: var(--navy); background: #eaf1fb; border: 1px solid #b9cdec; border-radius: 8px; padding: 8px 12px; }
 .rule-tally strong { color: var(--ink); }
 .tally-fail { color: var(--fail); font-weight: 700; }
 .tally-review { color: var(--review); font-weight: 700; }

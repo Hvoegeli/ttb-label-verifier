@@ -20,6 +20,10 @@
 <p class="rule-tally"><strong>{{ result.tally.pass }} of {{ result.tally.total }}</strong> mandatory checks passed{% if result.tally.fail %} &middot; <span class="tally-fail">{{ result.tally.fail }} failed</span>{% endif %}{% if result.tally.review %} &middot; <span class="tally-review">{{ result.tally.review }} need review</span>{% endif %}.</p>
 {% endif %}
 
+{% if result.escalated %}
+<p class="escalated-note">The first read looked low confidence, so this label was automatically re-read with a higher-accuracy model before the checks were run.</p>
+{% endif %}
+
 {% if result.note %}
 <div class="alert info">{{ result.note }}</div>
 {% endif %}

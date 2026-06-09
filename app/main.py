@@ -174,7 +174,7 @@ def _run_pipeline(jpegs: list[bytes], beverage: str) -> dict:
     # Record the measured cost + latency + verdict for the efficiency report
     # (/stats). Done after the verdict so the triage split can be logged.
     costs.record(
-        model=settings.claude_model,
+        model=extraction.model or settings.claude_model,
         input_tokens=extraction.input_tokens,
         output_tokens=extraction.output_tokens,
         cost_usd=extraction.cost_usd,
@@ -187,6 +187,7 @@ def _run_pipeline(jpegs: list[bytes], beverage: str) -> dict:
         "outcomes": outcomes,
         "fields": fields,
         "extraction": extraction,
+        "escalated": extraction.escalated,
         "note": note,
         "processing_ms": processing_ms,
         "cost_usd": extraction.cost_usd,
@@ -349,6 +350,7 @@ async def verify(
         "warning_diff": warning_diff,
         "note": note,
         "tally": tally,
+        "escalated": pipe.get("escalated", False),
         "processing_ms": processing_ms,
         "cost_usd": pipe["cost_usd"],
     }
