@@ -38,6 +38,16 @@
 
 <p class="muted">{{ "{:,}".format(agg.total_input_tokens) }} input + {{ "{:,}".format(agg.total_output_tokens) }} output tokens across {{ agg.count }} calls.</p>
 
+<details class="audit">
+  <summary>How these numbers are calculated</summary>
+  <div class="audit-body">
+    <p>Every figure here is measured, not estimated. Each verification logs the API's reported token usage, and the dollar cost is computed from the model's published price:</p>
+    <p class="audit-formula"><code>cost = input_tokens / 1,000,000 &times; input_price + output_tokens / 1,000,000 &times; output_price</code></p>
+    <p>The price table is dated and sourced in <code>app/costs.py</code> (<code>PRICING</code>). For Claude Haiku 4.5 that is $1.00 per 1M input tokens and $5.00 per 1M output tokens.</p>
+    <p>To audit any figure, read <code>metrics/usage.jsonl</code> (one JSON record per call, with the token counts, cost, and verdict) and cross-check a record against the price table. Nothing is back-estimated.</p>
+  </div>
+</details>
+
 <h2>By model</h2>
 <table class="fields">
   <thead><tr><th>Model</th><th>Calls</th><th>Cost</th></tr></thead>
