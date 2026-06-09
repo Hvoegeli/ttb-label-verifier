@@ -11,7 +11,6 @@ yet. Until they are, /verify validates and normalizes the image and renders the
 result skeleton with a clear "pending" notice, so the app runs end to end today.
 """
 import base64
-import json
 import time
 from pathlib import Path
 
@@ -199,8 +198,19 @@ async def verify(
     request: Request,
     image: UploadFile = File(...),
     image_back: UploadFile | None = File(default=None),
-    application: str = Form(default=""),
     beverage: str = Form(default="spirits"),
+    app_brand_name: str = Form(default=""),
+    app_fanciful_name: str = Form(default=""),
+    app_class_type: str = Form(default=""),
+    app_alcohol_content: str = Form(default=""),
+    app_net_contents: str = Form(default=""),
+    app_appellation: str = Form(default=""),
+    app_grape_varietal: str = Form(default=""),
+    app_vintage: str = Form(default=""),
+    app_serial_number: str = Form(default=""),
+    app_source_of_product: str = Form(default=""),
+    app_formula_number: str = Form(default=""),
+    app_permit_no: str = Form(default=""),
 ):
     # Validate and normalize the front label (required) and the back label
     # (optional). Real bottles split mandatory fields across both faces, so both
@@ -271,19 +281,35 @@ async def verify(
         if o.field == "Government warning":
             break
 
-    # Optional match check: compare the label against a mock application (JSON).
-    match_rows = None
+    # Optional match check: compare the label against the application (TTB Form
+    # 5100.31 fields entered in the upload panel). Only the matchable fields, those
+    # the label and the filing have in common, go to the matcher.
+    app_data = {
+        "brand_name": app_brand_name,
+        "fanciful_name": app_fanciful_name,
+        "class_type": app_class_type,
+        "alcohol_content": app_alcohol_content,
+        "net_contents": app_net_contents,
+        "appellation": app_appellation,
+        "grape_varietal": app_grape_varietal,
+        "vintage": app_vintage,
+    }
+    app_data = {k: v.strip() for k, v in app_data.items() if v and v.strip()}
+    match_rows = [m.as_row() for m in matcher.compare(fields, app_data)] or None if app_data else None
     match_error = None
-    if application and application.strip():
-        try:
-            app_data = json.loads(application)
-        except (json.JSONDecodeError, ValueError):
-            match_error = "Could not read the application data as JSON. Compliance result is shown; the comparison was skipped."
-        else:
-            if isinstance(app_data, dict):
-                match_rows = [m.as_row() for m in matcher.compare(fields, app_data)] or None
-            else:
-                match_error = "Application data must be a JSON object of field values."
+
+    # Filing details that have no counterpart on the label: shown for reference,
+    # never matched. These mirror the application-only items of Form 5100.31.
+    filing_context = [
+        {"field": label, "value": value.strip()}
+        for label, value in [
+            ("Serial number", app_serial_number),
+            ("Source of product", app_source_of_product),
+            ("Formula number", app_formula_number),
+            ("Plant registry / permit no.", app_permit_no),
+        ]
+        if value and value.strip()
+    ] or None
 
     # Only the content fields are displayed; the legibility flags drive logic, not the table.
     extracted = {
@@ -318,6 +344,7 @@ async def verify(
         "extracted": extracted,
         "match": match_rows,
         "match_error": match_error,
+        "filing_context": filing_context,
         "advisories": advisories or None,
         "warning_diff": warning_diff,
         "note": note,

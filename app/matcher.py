@@ -24,13 +24,20 @@ MISMATCH = "MISMATCH"
 NA = "N/A"
 
 # Application keys -> (display label, comparison mode). Order is display order.
-# loose: ignore case/punctuation/spacing. percent: compare the ABV number.
-# volume: compare the metric mL value. exact: whitespace-normalized, case-sensitive.
+# These mirror the matchable fields of TTB Form 5100.31 (the fields the filing and
+# the label have in common). loose: ignore case/punctuation/spacing. percent:
+# compare the ABV number. volume: compare the metric mL value. exact:
+# whitespace-normalized, case-sensitive. present: the filed value must appear in
+# the label text read (used for the fanciful name, which has no dedicated field).
 _FIELDS = [
     ("brand_name", "Brand name", "loose"),
-    ("class_type", "Class/type", "loose"),
+    ("fanciful_name", "Fanciful name", "present"),
+    ("class_type", "Class/type designation", "loose"),
     ("alcohol_content", "Alcohol content", "percent"),
     ("net_contents", "Net contents", "volume"),
+    ("appellation", "Appellation", "loose"),
+    ("grape_varietal", "Grape varietal", "loose"),
+    ("vintage", "Vintage", "loose"),
     ("government_warning", "Government warning", "exact"),
 ]
 
@@ -96,6 +103,18 @@ def compare(fields, application: dict) -> list[MatchOutcome]:
         if app_raw is None or not str(app_raw).strip():
             continue
         app_val = str(app_raw)
+
+        # Fanciful name has no dedicated label field, so check it is printed
+        # anywhere in the text we read (brand and class/type carry it).
+        if mode == "present":
+            haystack = " ".join(
+                v for v in (getattr(fields, "brand_name", None), getattr(fields, "class_type", None)) if v
+            )
+            if _loose(app_val) and _loose(app_val) in _loose(haystack):
+                outcomes.append(MatchOutcome(label, "(found on label)", app_val, MATCH, "filed fanciful name appears on the label"))
+            else:
+                outcomes.append(MatchOutcome(label, "(not found)", app_val, MISMATCH, "filed fanciful name not found in the label text read"))
+            continue
 
         label_raw = getattr(fields, key, None)
         if label_raw is None or not str(label_raw).strip():

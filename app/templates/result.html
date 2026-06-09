@@ -110,6 +110,18 @@
       </tbody>
     </table>
     {% endif %}
+
+    {% if result.filing_context %}
+    <h3>Filing details (context)</h3>
+    <p class="muted legend">From the application (Form 5100.31), with no direct counterpart on the label, so not matched.</p>
+    <table class="fields">
+      <tbody>
+        {% for c in result.filing_context %}
+        <tr><td>{{ c.field }}</td><td>{{ c.value }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
   </div>
 </div>
 {% endblock %}

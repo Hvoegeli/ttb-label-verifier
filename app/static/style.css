@@ -69,6 +69,12 @@ a { color: var(--navy); }
 input[type="file"] { font-size: 17px; }
 .optional { margin: 12px 0 20px; }
 .optional summary { cursor: pointer; font-weight: 600; }
+.app-form { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px; margin-top: 12px; }
+.app-form-section { grid-column: 1 / -1; margin: 8px 0 0; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+.app-field { display: flex; flex-direction: column; gap: 4px; font-size: 14px; }
+.app-field span { color: var(--muted); }
+.app-field input { font-size: 16px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; }
+@media (max-width: 560px) { .app-form { grid-template-columns: 1fr; } }
 textarea { width: 100%; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 14px; padding: 10px; border: 1px solid var(--line); border-radius: 8px; margin-top: 8px; }
 
 button.primary {

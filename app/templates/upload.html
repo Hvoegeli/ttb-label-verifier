@@ -25,10 +25,28 @@
   </label>
 
   <details class="optional">
-    <summary>Optional: compare against an application</summary>
-    <p class="hint">Paste application data as JSON (modeled on TTB Form 5100.31 fields). Leave blank to check compliance only.</p>
-    <textarea name="application" rows="6"
-      placeholder='{"brand_name": "OLD TOM DISTILLERY", "class_type": "Kentucky Straight Bourbon Whiskey", "alcohol_content": "45% Alc./Vol.", "net_contents": "750 mL"}'></textarea>
+    <summary>Optional: compare against an application (TTB Form 5100.31)</summary>
+    <p class="hint">Enter the fields as filed on the application. The tool then checks whether the label matches the filing, on top of the compliance check. Leave blank to check compliance only.</p>
+
+    <div class="app-form">
+      <p class="app-form-section">Matched against the label</p>
+      <label class="app-field"><span>Brand name</span><input type="text" name="app_brand_name" placeholder="OLD TOM DISTILLERY"></label>
+      <label class="app-field"><span>Fanciful name</span><input type="text" name="app_fanciful_name" placeholder="(if any)"></label>
+      <label class="app-field"><span>Class/type designation</span><input type="text" name="app_class_type" placeholder="Kentucky Straight Bourbon Whiskey"></label>
+      <label class="app-field"><span>Alcohol content</span><input type="text" name="app_alcohol_content" placeholder="45% Alc./Vol."></label>
+      <label class="app-field"><span>Net contents</span><input type="text" name="app_net_contents" placeholder="750 mL"></label>
+      {% if beverage == 'wine' %}
+      <label class="app-field"><span>Appellation</span><input type="text" name="app_appellation" placeholder="Napa Valley"></label>
+      <label class="app-field"><span>Grape varietal</span><input type="text" name="app_grape_varietal" placeholder="Cabernet Sauvignon"></label>
+      <label class="app-field"><span>Vintage</span><input type="text" name="app_vintage" placeholder="2019"></label>
+      {% endif %}
+
+      <p class="app-form-section">Filing details (context, not matched)</p>
+      <label class="app-field"><span>Serial number</span><input type="text" name="app_serial_number" placeholder="26001"></label>
+      <label class="app-field"><span>Source of product</span><input type="text" name="app_source_of_product" placeholder="Domestic"></label>
+      <label class="app-field"><span>Formula number</span><input type="text" name="app_formula_number" placeholder="(if any)"></label>
+      <label class="app-field"><span>Plant registry / permit no.</span><input type="text" name="app_permit_no" placeholder="DSP-KY-12345"></label>
+    </div>
   </details>
 
   <button class="primary" type="submit" id="verify-btn">Verify label</button>

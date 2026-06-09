@@ -139,22 +139,44 @@ def test_verify_shows_warning_diff_on_mismatch(monkeypatch):
 
 def test_verify_with_application_shows_match_block(monkeypatch):
     monkeypatch.setattr(main_module, "extract_fields", lambda *a, **k: _fake_result())
-    application = '{"brand_name": "Old Tom Distillery", "alcohol_content": "40% Alc/Vol"}'
     files = {"image": ("label.png", _png_bytes(), "image/png")}
-    r = client.post("/verify", files=files, data={"beverage": "spirits", "application": application})
+    r = client.post("/verify", files=files, data={
+        "beverage": "spirits",
+        "app_brand_name": "Old Tom Distillery",
+        "app_alcohol_content": "40% Alc/Vol",
+    })
     assert r.status_code == 200
     assert "Label vs Application" in r.text
     assert "MISMATCH" in r.text  # 40% application vs 45% label
     assert "MATCH" in r.text     # brand matches after normalization
 
 
-def test_verify_with_bad_application_json_is_graceful(monkeypatch):
+def test_verify_no_application_omits_match_block(monkeypatch):
+    # With no application fields entered, only the compliance result shows.
     monkeypatch.setattr(main_module, "extract_fields", lambda *a, **k: _fake_result())
     files = {"image": ("label.png", _png_bytes(), "image/png")}
-    r = client.post("/verify", files=files, data={"beverage": "spirits", "application": "{not valid json"})
+    r = client.post("/verify", files=files, data={"beverage": "spirits"})
     assert r.status_code == 200
-    assert "Could not read the application data as JSON" in r.text
-    assert "PASS" in r.text  # compliance result still shown
+    assert "Label vs Application" not in r.text
+    assert "PASS" in r.text
+
+
+def test_verify_fanciful_name_and_filing_context(monkeypatch):
+    # A filed fanciful name present in the label text matches; filing-only fields
+    # (serial number, etc.) render as context and are not matched.
+    monkeypatch.setattr(main_module, "extract_fields", lambda *a, **k: _fake_result(brand_name="OLD TOM DISTILLERY RESERVE"))
+    files = {"image": ("label.png", _png_bytes(), "image/png")}
+    r = client.post("/verify", files=files, data={
+        "beverage": "spirits",
+        "app_fanciful_name": "Reserve",
+        "app_serial_number": "26001",
+    })
+    assert r.status_code == 200
+    assert "Label vs Application" in r.text
+    assert "Fanciful name" in r.text
+    assert "MATCH" in r.text             # "Reserve" found in the label text
+    assert "Filing details" in r.text    # context section rendered
+    assert "26001" in r.text             # serial number shown as context
 
 
 def test_verify_illegible_routes_to_review(monkeypatch):

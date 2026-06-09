@@ -64,7 +64,25 @@ def test_only_provided_fields_are_compared():
 
 def test_missing_label_value_is_not_applicable():
     out = _by_field(compare(fields(class_type=None), {"class_type": "Vodka"}))
-    assert out["Class/type"].status == NA
+    assert out["Class/type designation"].status == NA
+
+
+def test_fanciful_name_present_on_label_matches():
+    out = _by_field(compare(fields(brand_name="OLD TOM DISTILLERY RESERVE"), {"fanciful_name": "Reserve"}))
+    assert out["Fanciful name"].status == MATCH
+
+
+def test_fanciful_name_absent_from_label_mismatches():
+    out = _by_field(compare(fields(), {"fanciful_name": "Midnight"}))
+    assert out["Fanciful name"].status == MISMATCH
+
+
+def test_wine_fields_match_on_application():
+    wf = fields(class_type="Cabernet Sauvignon", appellation="Napa Valley",
+                grape_varietal="Cabernet Sauvignon", vintage="2019")
+    out = _by_field(compare(wf, {"appellation": "napa valley", "vintage": "2019"}))
+    assert out["Appellation"].status == MATCH
+    assert out["Vintage"].status == MATCH
 
 
 def test_example_mismatch_file_flags_alcohol():
