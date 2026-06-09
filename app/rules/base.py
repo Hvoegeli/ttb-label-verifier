@@ -23,6 +23,7 @@ FIELD_GLOSS = {
     "Government warning": "Health warning statement",
     "Appellation": "Appellation of origin",
     "Sulfite declaration": "Sulfite declaration",
+    "Country of origin": "Country of origin (imports)",
 }
 
 

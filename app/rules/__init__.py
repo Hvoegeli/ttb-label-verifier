@@ -9,7 +9,7 @@ outcomes. overall_verdict() aggregates them with the priority FAIL > NEEDS REVIE
 > PASS, considering only Golden Rules (mandatory hard gates); advisory outcomes
 (golden=False) are shown to the user but never change the verdict.
 """
-from . import abv, beer, classtype, fill, presence, warning, wine
+from . import abv, beer, classtype, fill, origin, presence, warning, wine
 from .base import FAIL, PASS, REVIEW, RuleOutcome, normalize_ws
 
 __all__ = ["run_rules", "overall_verdict", "RuleOutcome", "PASS", "FAIL", "REVIEW", "normalize_ws"]
@@ -22,6 +22,7 @@ def _run_spirits(fields) -> list[RuleOutcome]:
         classtype.check(fields),
         abv.check(fields),
         fill.check(fields),
+        origin.check(fields, "spirits"),
         warning.check(fields),
     ]
 

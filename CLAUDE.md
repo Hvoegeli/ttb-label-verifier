@@ -35,6 +35,7 @@ Locked decisions from presearch. Do not switch any of these without explicit use
 - Percent alcohol by volume is the mandatory alcohol statement (27 CFR 5.65); proof is optional and never a substitute.
 - The vision model never decides PASS or FAIL. It only returns field values. All verdicts come from deterministic code.
 - Proposed rules (allergen, Alcohol Facts nutrition, cancer warning) are advisory only and must never be hard pass/fail gates.
+- Country of origin (27 CFR 5.69 / 7.69, deferring to CBP marking at 19 CFR part 134) is conditional on the product being an import. Because import status is hard to prove from one photo, this check never hard-FAILs on that inference: it returns NEEDS REVIEW when the label looks imported but states no origin, and PASS otherwise. Do not turn it into an auto-FAIL.
 - When a field cannot be read with confidence, return NEEDS REVIEW. Never auto pass.
 
 ## Workflow rules (from global instructions)

@@ -29,13 +29,15 @@ default model (Claude Haiku 4.5, $1.00 input / $5.00 output per 1M tokens) that 
 on the order of **$0.004 to $0.005 per label**. The `/stats` page shows the actual
 measured average for this deployment.
 
-## Representative measured run (the 25 sample labels)
+## Representative measured run (the sample labels)
 
-Running the committed sample label set (`sample_labels/`, 25 labels: 10 designed
-to pass, 10 to fail, 5 to need review) through the live pipeline on Claude Haiku
-4.5 produced the measured figures below. This is a snapshot for a reader who does
-not run the app; the live `/stats` page shows whatever the current deployment has
-actually processed.
+Running the committed sample label set through the live pipeline on Claude Haiku
+4.5 produced the measured figures below. The snapshot was taken on the 25-label
+set (10 pass, 10 fail, 5 review); the corpus has since grown to 27 with two
+imported-product labels added for the country-of-origin check (now 11 pass, 10
+fail, 6 review), which does not materially change the per-label cost or latency.
+This is a snapshot for a reader who does not run the app; the live `/stats` page
+shows whatever the current deployment has actually processed.
 
 | Measure | Value |
 | --- | --- |

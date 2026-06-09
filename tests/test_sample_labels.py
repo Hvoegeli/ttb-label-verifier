@@ -19,8 +19,9 @@ ENTRIES = json.loads(MANIFEST.read_text())
 
 
 def test_manifest_size_and_mix():
-    # The agreed set is 20 to 25 labels with all three verdicts represented.
-    assert 20 <= len(ENTRIES) <= 25
+    # Started at 20 to 25; grew to 27 with two imported-product labels for the
+    # country-of-origin check. All three verdicts must be represented.
+    assert 20 <= len(ENTRIES) <= 30
     verdicts = {e["expected"] for e in ENTRIES}
     assert verdicts == {"PASS", "FAIL", "NEEDS REVIEW"}
 

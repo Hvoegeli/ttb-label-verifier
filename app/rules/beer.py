@@ -17,7 +17,7 @@ The Government Warning (27 CFR Part 16) is shared with every beverage.
 """
 import re
 
-from . import warning
+from . import origin, warning
 from .base import FAIL, PASS, REVIEW, RuleOutcome
 
 # Recognized malt beverage class/type designations (lowercased), modifier-tolerant.
@@ -112,5 +112,6 @@ def run(fields) -> list[RuleOutcome]:
         check_presence(fields),
         check_classtype(fields),
         check_abv(fields),
+        origin.check(fields, "beer"),
         warning.check(fields),
     ]

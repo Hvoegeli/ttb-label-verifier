@@ -191,6 +191,19 @@ SPECS = [
     {"id": "wine_fail_missing_fields", "beverage": "wine", "expected": "FAIL",
      "planted": "Sparse label missing net contents and bottler name/address (27 CFR 4.32).",
      "fields": _wine(brand_name="BARE BOTTLE", net_contents=None, name_and_address=None)},
+
+    # Country of origin for imports (27 CFR 5.69 / 7.69 -> CBP 19 CFR 134) ----
+    {"id": "spirits_pass_imported_scotch", "beverage": "spirits", "expected": "PASS",
+     "planted": "Imported Scotch that correctly states its country of origin.",
+     "fields": _spirits(brand_name="GLEN ARDEN", class_type="Single Malt Scotch Whisky",
+                        alcohol_content="43% Alc./Vol. (86 Proof)",
+                        name_and_address="Imported by Highland Selections, New York, NY",
+                        country_of_origin="Product of Scotland", appears_imported=True)},
+    {"id": "spirits_review_import_no_origin", "beverage": "spirits", "expected": "NEEDS REVIEW",
+     "planted": "Looks imported ('Imported by') but no country of origin -> review, not auto-fail.",
+     "fields": _spirits(brand_name="PORT ROYAL", class_type="Rum", alcohol_content="40% Alc/Vol",
+                        name_and_address="Imported by Atlantic Spirits Co., Miami, FL",
+                        appears_imported=True)},
 ]
 
 
@@ -271,6 +284,9 @@ def render(spec) -> None:
         for line in _wrap(d, f["name_and_address"], _font(17), text_w):
             d.text((margin, y), line, font=_font(17), fill=(70, 70, 70))
             y += 24
+    if f.get("country_of_origin"):
+        d.text((margin, y), f["country_of_origin"], font=_font(18), fill=(55, 55, 55))
+        y += 30
 
     # Government Warning block, anchored near the bottom. The header is drawn in a
     # bold font for realism, but the exact characters of the stored string are what

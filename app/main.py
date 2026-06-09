@@ -321,6 +321,9 @@ async def verify(
         "Name and address": fields.name_and_address,
         "Government warning": fields.government_warning,
     }
+    # Country of origin is shown only when read, since it is relevant to imports.
+    if fields.country_of_origin:
+        extracted["Country of origin"] = fields.country_of_origin
     if beverage == "wine":
         extracted["Appellation"] = fields.appellation
         extracted["Vintage"] = fields.vintage

@@ -17,7 +17,7 @@ The Government Warning (27 CFR Part 16) is shared with every beverage.
 """
 import re
 
-from . import warning
+from . import origin, warning
 from .base import FAIL, PASS, REVIEW, RuleOutcome
 from .fill import nearest_sizes, parse_ml
 
@@ -183,5 +183,6 @@ def run(fields) -> list[RuleOutcome]:
         check_fill(fields),
         check_appellation(fields),
         check_sulfite(fields),
+        origin.check(fields, "wine"),
         warning.check(fields),
     ]

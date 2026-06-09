@@ -23,6 +23,8 @@ results assist a human reviewer and are not final determinations.
   - Alcohol content stated as percent alcohol by volume; proof optional (27 CFR 5.65)
   - Class/type is a recognized designation (27 CFR 5.141-5.143)
   - All mandatory elements present (27 CFR 5.63)
+  - Country of origin is stated when the product appears to be an import (27 CFR
+    5.69 and 7.69, which defer to U.S. Customs marking rules at 19 CFR part 134)
   - Wine (Part 4) and malt beverages (Part 7) have their own rule sets with the
     differences noted under Scope below.
 - Returns an overall verdict (FAIL beats NEEDS REVIEW beats PASS) with per-field
@@ -134,6 +136,12 @@ fraction of a cent per label.
   bold, contrasting background) cannot be proven from a photo and are shown as
   advisory; on true vector PDF artwork they would become hard checks (a
   documented production path).
+- Country of origin is conditional and deliberately conservative. Whether a
+  single photo even shows an import is hard to prove, so the check never auto-
+  fails on that inference: it flags NEEDS REVIEW when the label looks imported
+  but states no origin, and passes a clearly domestic label. The trade-off is
+  that an import the model fails to recognize can slip through as PASS, which is
+  why a human still spot-checks cleared labels.
 - Proposed 2025 rules (allergen, nutrition, cancer warning) are not in force and
   are never treated as hard pass/fail gates.
 - A production deployment behind TTB's firewall would swap cloud inference for a

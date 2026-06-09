@@ -52,6 +52,8 @@ _BASE_PROPERTIES = {
     "alcohol_content": {"type": ["string", "null"], "description": "The alcohol content statement exactly as printed, e.g. '45% Alc./Vol. (90 Proof)' or '13.5% Alc/Vol', or null."},
     "net_contents": {"type": ["string", "null"], "description": "The net contents exactly as printed, e.g. '750 mL' or '12 FL OZ', or null."},
     "name_and_address": {"type": ["string", "null"], "description": "The bottler/producer/importer name and address, or null."},
+    "country_of_origin": {"type": ["string", "null"], "description": "The country-of-origin statement exactly as printed, e.g. 'Product of Scotland', 'Product of France', or 'Imported from Mexico'. This is a stated origin for the product itself, NOT the city in the bottler/importer address. Null if no country of origin is stated."},
+    "appears_imported": {"type": ["boolean", "null"], "description": "true if the label shows import indicators (an 'imported by' statement, a foreign producer/bottler address, or a stated country of origin); false if it appears domestically produced (e.g. a U.S. bottler address with no import language); null if unclear."},
     "government_warning": {
         "type": ["string", "null"],
         "description": "Transcribe the GOVERNMENT WARNING statement EXACTLY as printed, character for character, preserving capitalization and punctuation. Do not correct or complete it. Null if no warning appears.",
@@ -120,6 +122,10 @@ def _build_prompt(beverage: str) -> str:
         "contents, and bottler name and address are usually on the back. "
         "Transcribe exactly what is printed; do not infer, correct, complete, or judge "
         "compliance. For the government warning, copy it verbatim, character for character. "
+        "For country of origin, record any stated origin for the product (for example "
+        "'Product of Scotland'); the city inside a bottler or importer address is NOT a "
+        "country of origin. Set appears_imported true when the label carries an 'imported "
+        "by' statement, a foreign producer or bottler address, or a stated country of origin. "
         "If a field is not present on any image, use null. If the images are too unclear to "
         "read a field confidently, set the legibility flags to false rather than guessing."
         + _EXTRA_GUIDANCE.get(beverage, "")

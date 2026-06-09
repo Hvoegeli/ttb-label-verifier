@@ -165,7 +165,8 @@ def test_presence_missing_when_illegible_reviews():
 
 def test_run_rules_all_compliant_overall_pass():
     outcomes = run_rules(fields())
-    assert len(outcomes) == 5
+    # presence, class/type, ABV, fill, country of origin, government warning.
+    assert len(outcomes) == 6
     assert all(o.citation for o in outcomes)
     assert overall_verdict(outcomes, True) == PASS
 

@@ -17,6 +17,14 @@ class ExtractedFields(BaseModel):
     net_contents: str | None = None
     name_and_address: str | None = None
     government_warning: str | None = None
+    # Country-of-origin statement for imports, e.g. "Product of Scotland", or None.
+    # Applies to every beverage: TTB defers to U.S. Customs marking rules (19 CFR
+    # part 134) via 27 CFR 5.69 (spirits) and 7.69 (malt beverages).
+    country_of_origin: str | None = None
+    # True if the label shows import indicators (an "imported by" statement, a
+    # foreign producer/bottler address, or a stated country of origin); False if it
+    # appears domestically produced; None if unclear. Drives the conditional check.
+    appears_imported: bool | None = None
     # True if the warning text was read cleanly; False if partial/blurry/garbled.
     warning_legible: bool = True
     # True if the label overall was clear enough to trust the extraction.

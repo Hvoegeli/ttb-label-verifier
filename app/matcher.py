@@ -38,6 +38,7 @@ _FIELDS = [
     ("appellation", "Appellation", "loose"),
     ("grape_varietal", "Grape varietal", "loose"),
     ("vintage", "Vintage", "loose"),
+    ("country_of_origin", "Country of origin", "loose"),
     ("government_warning", "Government warning", "exact"),
 ]
 
