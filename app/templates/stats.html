@@ -8,6 +8,26 @@
 {% if agg.count == 0 %}
 <div class="alert info">No labels have been verified yet. Run a check, then refresh this page.</div>
 {% else %}
+<div class="cost-hero">
+  At the measured cost of <strong>${{ "%.4f"|format(machine_cost_per_label) }}</strong> per label,
+  machine-screening TTB's <strong>{{ "{:,}".format(annual_labels) }}</strong> annual applications costs about
+  <strong>${{ "{:,.0f}".format(annual_machine_cost) }}</strong> in compute, versus about
+  <strong>${{ "{:,.0f}".format(annual_manual_cost) }}</strong> in manual review time at your current
+  assumptions ({{ minutes_per_label }} min/label, ${{ "%.0f"|format(hourly_rate) }}/hr). Net illustrative
+  saving on routine screening: <strong>${{ "{:,.0f}".format(annual_savings) }}/year</strong>.
+</div>
+
+<form class="cost-form" method="get" action="/stats">
+  <span class="cost-form-title">Use your own assumptions:</span>
+  <label>Minutes per manual review
+    <input type="number" name="minutes_per_label" value="{{ minutes_per_label }}" min="0" step="0.5">
+  </label>
+  <label>Loaded hourly rate ($)
+    <input type="number" name="hourly_rate" value="{{ "%.0f"|format(hourly_rate) }}" min="0" step="1">
+  </label>
+  <button class="primary" type="submit">Recalculate</button>
+</form>
+
 <div class="stat-grid">
   <div class="stat"><span class="stat-num">{{ agg.count }}</span><span class="stat-lbl">labels verified</span></div>
   <div class="stat"><span class="stat-num">${{ "%.4f"|format(agg.total_cost_usd) }}</span><span class="stat-lbl">total API cost</span></div>
@@ -30,10 +50,9 @@
 
 <h2>Labor comparison (illustrative)</h2>
 <p class="hint">
-  Adjustable assumptions: a manual review takes <strong>{{ minutes_per_label }} min</strong> at a loaded rate of
-  <strong>${{ "%.0f"|format(hourly_rate) }}/hr</strong>. Change them via
-  <code>?minutes_per_label=NN&amp;hourly_rate=NN</code>. The automated cost is real (logged usage);
-  the manual cost is your assumption.
+  Based on a manual review of <strong>{{ minutes_per_label }} min</strong> at a loaded rate of
+  <strong>${{ "%.0f"|format(hourly_rate) }}/hr</strong> (change these in the box above). The automated cost
+  is real (logged token usage); the manual cost is the assumption you set.
 </p>
 <table class="fields">
   <tbody>

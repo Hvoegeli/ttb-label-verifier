@@ -159,6 +159,19 @@ table.fields th { font-size: 14px; text-transform: uppercase; letter-spacing: 0.
 .nav-stats:hover { text-decoration: underline; }
 
 /* Stats page */
+.cost-hero {
+  background: var(--pass-bg); border: 1px solid #bfe3cb; border-left: 5px solid var(--pass);
+  border-radius: 10px; padding: 18px 20px; margin: 18px 0; font-size: 18px; line-height: 1.55;
+}
+.cost-hero strong { color: var(--navy); white-space: nowrap; }
+.cost-form {
+  display: flex; flex-wrap: wrap; align-items: flex-end; gap: 16px;
+  background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; margin: 0 0 20px;
+}
+.cost-form-title { font-weight: 600; flex-basis: 100%; }
+.cost-form label { display: flex; flex-direction: column; gap: 4px; font-size: 14px; color: var(--muted); }
+.cost-form input { font-size: 17px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; width: 150px; }
+.cost-form button.primary { font-size: 16px; padding: 10px 20px; }
 .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; margin: 20px 0; }
 .stat { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 18px; display: flex; flex-direction: column; gap: 6px; }
 .stat-num { font-size: 26px; font-weight: 700; color: var(--navy); }
