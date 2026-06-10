@@ -13,8 +13,8 @@ from fastapi.testclient import TestClient
 from PIL import Image
 
 import app.main as main_module
-from app.extractor import ExtractedFields, ExtractionResult
-from app.main import _resolve_beverage, app
+from app.extractor import ExtractedFields, ExtractionError, ExtractionResult
+from app.main import _classify, app
 from app.rules.warning import CANONICAL
 
 client = TestClient(app)
@@ -60,20 +60,22 @@ def _beer():
                    is_flavored_malt_beverage=False)
 
 
-# ---- _resolve_beverage ----
+# ---- _classify (rule set + how it was decided) ----
 
-def test_resolve_explicit_selection_overrides():
-    assert _resolve_beverage("spirits", "wine") == "spirits"
-
-
-def test_resolve_uses_detected_when_auto():
-    assert _resolve_beverage("auto", "wine") == "wine"
-    assert _resolve_beverage("auto", "beer") == "beer"
+def test_classify_explicit_selection_is_forced():
+    assert _classify("spirits", "wine") == ("spirits", "forced")
 
 
-def test_resolve_falls_back_to_spirits():
-    assert _resolve_beverage("auto", None) == "spirits"
-    assert _resolve_beverage("auto", "nonsense") == "spirits"
+def test_classify_uses_detected_when_auto():
+    assert _classify("auto", "wine") == ("wine", "detected")
+    assert _classify("auto", "beer") == ("beer", "detected")
+
+
+def test_classify_undetermined_falls_back_to_spirits():
+    # Null or out-of-enum detection under auto: spirits is only a default book,
+    # and the source is flagged undetermined so the caller routes to review.
+    assert _classify("auto", None) == ("spirits", "undetermined")
+    assert _classify("auto", "cider") == ("spirits", "undetermined")
 
 
 # ---- single-label routing ----
@@ -104,7 +106,8 @@ def test_forced_type_overrides_detection_and_is_noted(monkeypatch):
     r = client.post("/verify", files=_file(), data={"beverage": "spirits"})
     assert r.status_code == 200
     assert "Checked as <strong>Distilled Spirits" in r.text
-    assert "you chose this type" in r.text
+    assert "you selected this type" in r.text
+    assert "the label otherwise reads as wine" in r.text
     assert "NEEDS REVIEW" in r.text
 
 
@@ -132,3 +135,80 @@ def test_mixed_batch_routes_each_label_by_its_type(monkeypatch):
     assert "verdict-pill verdict-pass" in r.text
     assert "verdict-pill verdict-fail" not in r.text
     assert "verdict-pill verdict-needs-review" not in r.text
+
+
+# ---- review fixes: honest type-source reporting ----
+
+def _spirits_fields(**over):
+    """A compliant spirits read; beverage_type controllable for routing tests."""
+    return _result(brand_name="OLD TOM DISTILLERY",
+                   class_type="Kentucky Straight Bourbon Whiskey",
+                   alcohol_content="45% Alc./Vol. (90 Proof)", net_contents="750 mL",
+                   name_and_address="Bottled by Old Tom, Bardstown, KY", **over)
+
+
+def test_failed_read_does_not_claim_a_type(monkeypatch):
+    # Issue 1: a total extraction failure must NOT render "Checked as <type>".
+    def boom(*a, **k):
+        raise ExtractionError("The label-reading service was unavailable. Please try again.")
+    monkeypatch.setattr(main_module, "extract_fields", boom)
+    r = client.post("/verify", files=_file(), data={"beverage": "auto"})
+    assert r.status_code == 200
+    assert "NEEDS REVIEW" in r.text
+    assert "Checked as" not in r.text          # no fabricated classification
+    assert "unavailable" in r.text
+
+
+def test_undetermined_type_routes_to_review(monkeypatch):
+    # Issue 3: auto mode + no usable detected type -> NEEDS REVIEW, not silent spirits PASS.
+    monkeypatch.setattr(main_module, "extract_fields", lambda *a, **k: _spirits_fields(beverage_type=None))
+    r = client.post("/verify", files=_file(), data={"beverage": "auto"})
+    assert r.status_code == 200
+    assert "NEEDS REVIEW" in r.text
+    assert "could not be determined" in r.text
+
+
+def test_out_of_enum_type_routes_to_review(monkeypatch):
+    # Issue 3: a populated but out-of-enum type ("cider") is treated as undetermined.
+    monkeypatch.setattr(main_module, "extract_fields", lambda *a, **k: _spirits_fields(beverage_type="cider"))
+    r = client.post("/verify", files=_file(), data={"beverage": "auto"})
+    assert r.status_code == 200
+    assert "NEEDS REVIEW" in r.text
+    assert "could not be determined" in r.text
+
+
+def test_explicit_pick_is_not_mislabeled_as_auto(monkeypatch):
+    # Issue 5: forcing wine on a wine label must say "you selected", not "detected".
+    monkeypatch.setattr(main_module, "extract_fields", lambda *a, **k: _wine())
+    r = client.post("/verify", files=_file(), data={"beverage": "wine"})
+    assert r.status_code == 200
+    assert "you selected this type" in r.text
+    assert "detected automatically" not in r.text
+
+
+def test_batch_forced_rows_marked_forced(monkeypatch):
+    # Issue 2: a forced batch shows "(forced)" so a coerced row is not read as detected.
+    monkeypatch.setattr(main_module, "extract_fields", lambda *a, **k: _spirits())
+    files = [("images", (f"l{i}.png", _png(), "image/png")) for i in range(2)]
+    r = client.post("/batch", files=files, data={"beverage": "wine"})
+    assert r.status_code == 200
+    assert "(forced)" in r.text
+
+
+def test_batch_undetermined_shows_not_determined(monkeypatch):
+    # Issue 1/2: an undetermined label shows "Not determined", not a fabricated type.
+    monkeypatch.setattr(main_module, "extract_fields", lambda *a, **k: _spirits_fields(beverage_type=None))
+    files = [("images", ("l.png", _png(), "image/png"))]
+    r = client.post("/batch", files=files, data={"beverage": "auto"})
+    assert r.status_code == 200
+    assert "Not determined" in r.text
+
+
+def test_wine_match_fields_ignored_for_non_wine(monkeypatch):
+    # Issue 5: a wine-only application field filed against a spirits label must not
+    # produce a spurious match row; with only that field, no match block appears.
+    monkeypatch.setattr(main_module, "extract_fields", lambda *a, **k: _spirits())
+    r = client.post("/verify", files=_file(),
+                    data={"beverage": "auto", "app_appellation": "Napa Valley"})
+    assert r.status_code == 200
+    assert "Label vs Application" not in r.text

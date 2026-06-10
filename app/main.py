@@ -137,16 +137,35 @@ async def _validate_and_normalize(image: UploadFile) -> bytes:
     return normalize_to_jpeg(raw, settings.max_upload_mb)
 
 
-def _resolve_beverage(selection: str, detected: str | None) -> str:
-    """Pick which rule set to apply. An explicit beverage selection overrides the
-    model; otherwise use the detected type; fall back to spirits if neither is
-    usable. Selection 'auto' (or anything outside the three rule sets) means
-    'trust the detected type'."""
+def _classify(selection: str, detected: str | None) -> tuple[str, str]:
+    """Decide which rule set to apply AND how that decision was made.
+
+    Returns (rule_beverage, source). `source` lets the UI describe the routing
+    honestly instead of presenting every case as a confident classification:
+      - "forced": the user picked a specific type; it wins over the model.
+      - "detected": auto mode, and the model classified into one of the three.
+      - "undetermined": auto mode, but the model returned no usable type (null or
+        an out-of-enum value like "cider"); spirits is used only as a default rule
+        book and the caller flags the result NEEDS REVIEW rather than trusting it.
+    """
     if selection in VALID_BEVERAGES:
-        return selection
+        return selection, "forced"
     if detected in VALID_BEVERAGES:
-        return detected
-    return "spirits"
+        return detected, "detected"
+    return "spirits", "undetermined"
+
+
+def _batch_type_label(pipe: dict) -> str | None:
+    """How a label's type is shown in the batch table, reflecting how it was
+    decided: a failed read or an undetermined type never shows a fabricated type,
+    and a forced selection is marked so a coerced row is not mistaken for a read."""
+    source = pipe.get("type_source")
+    if source == "failed":
+        return None
+    if source == "undetermined":
+        return "Not determined"
+    name = _beverage_name(pipe["beverage"])
+    return f"{name} (forced)" if source == "forced" else name
 
 
 def _run_pipeline(jpegs: list[bytes], selection: str = "auto") -> dict:
@@ -167,13 +186,17 @@ def _run_pipeline(jpegs: list[bytes], selection: str = "auto") -> dict:
     try:
         extraction = extract_fields(jpegs)
     except ExtractionError as exc:
+        # Nothing was read, so no type was determined. Use a default rule book
+        # name internally but mark the source "failed" so the UI does not claim
+        # the label was classified.
         return {
             "overall": "NEEDS REVIEW",
             "outcomes": [],
             "fields": None,
             "extraction": None,
-            "beverage": _resolve_beverage(selection, None),
+            "beverage": _classify(selection, None)[0],
             "detected": None,
+            "type_source": "failed",
             "overridden": False,
             "note": str(exc),
             "processing_ms": (time.perf_counter() - started) * 1000,
@@ -183,9 +206,9 @@ def _run_pipeline(jpegs: list[bytes], selection: str = "auto") -> dict:
     processing_ms = (time.perf_counter() - started) * 1000
     fields = extraction.fields
     detected = fields.beverage_type
-    beverage = _resolve_beverage(selection, detected)
+    beverage, type_source = _classify(selection, detected)
     # True when the user forced a type that disagrees with what the label looks like.
-    overridden = selection in VALID_BEVERAGES and detected in VALID_BEVERAGES and selection != detected
+    overridden = type_source == "forced" and detected in VALID_BEVERAGES and detected != selection
 
     # Confidence gate: never run compliance checks on an image we could not read.
     if not fields.overall_legible:
@@ -196,6 +219,13 @@ def _run_pipeline(jpegs: list[bytes], selection: str = "auto") -> dict:
         outcomes = run_rules(fields, beverage)
         overall = overall_verdict(outcomes, fields.overall_legible)
         note = None
+        # Auto mode but the model could not classify the beverage: we ran spirits
+        # rules only as a default, so do not trust the verdict; route to a human.
+        if type_source == "undetermined":
+            overall = "NEEDS REVIEW"
+            note = ("The beverage type could not be determined from the label, so it was "
+                    "checked under distilled-spirits rules as a default. Confirm the type "
+                    "and re-check by hand.")
 
     # Record the measured cost + latency + verdict for the efficiency report
     # (/stats). Done after the verdict so the triage split can be logged.
@@ -216,6 +246,7 @@ def _run_pipeline(jpegs: list[bytes], selection: str = "auto") -> dict:
         "escalated": extraction.escalated,
         "beverage": beverage,
         "detected": detected,
+        "type_source": type_source,
         "overridden": overridden,
         "note": note,
         "processing_ms": processing_ms,
@@ -276,6 +307,7 @@ async def verify(
     resolved = pipe["beverage"]
     detected = pipe["detected"]
     overridden = pipe["overridden"]
+    type_source = pipe["type_source"]
 
     # Extraction failed outright: nothing was read, so route to human review with
     # the safe message and skip the (impossible) field display and comparisons.
@@ -293,7 +325,8 @@ async def verify(
             request, "result.html",
             {"result": result, "previews": previews, "beverage": beverage,
              "detected_beverage": detected, "resolved_beverage": resolved,
-             "overridden": overridden, "beverage_name": _beverage_name(resolved)},
+             "type_source": type_source, "overridden": overridden,
+             "beverage_name": _beverage_name(resolved)},
         )
 
     # Advisory (Tier 2) notes: format/size/placement checks a photo cannot prove.
@@ -331,6 +364,12 @@ async def verify(
         "vintage": app_vintage,
     }
     app_data = {k: v.strip() for k, v in app_data.items() if v and v.strip()}
+    # Appellation, grape varietal, and vintage only apply to wine. If the label was
+    # not judged as wine (the auto-mode panel still offers them), drop them so they
+    # do not produce a confusing "not found" row against a spirits/beer label.
+    if resolved != "wine":
+        for k in ("appellation", "grape_varietal", "vintage"):
+            app_data.pop(k, None)
     match_rows = [m.as_row() for m in matcher.compare(fields, app_data)] or None if app_data else None
     match_error = None
 
@@ -397,7 +436,8 @@ async def verify(
         "result.html",
         {"result": result, "previews": previews, "beverage": beverage,
          "detected_beverage": detected, "resolved_beverage": resolved,
-         "overridden": overridden, "beverage_name": _beverage_name(resolved)},
+         "type_source": type_source, "overridden": overridden,
+         "beverage_name": _beverage_name(resolved)},
     )
 
 
@@ -516,9 +556,9 @@ async def batch_verify(
         reason = pipe["note"] or _summarize_outcomes(pipe["outcomes"]) or "All mandatory checks passed."
         rows.append({
             "filename": item["filename"],
-            # The type the label was judged as: detected per label (or the forced
-            # selection). Shown so a mixed batch makes its routing visible.
-            "type": _beverage_name(pipe["beverage"]),
+            # The type the label was judged as, marked forced/undetermined/failed so
+            # a mixed batch makes its routing visible without fabricating a type.
+            "type": _batch_type_label(pipe),
             "overall": pipe["overall"],
             "reason": reason,
             "cost_usd": pipe["cost_usd"],

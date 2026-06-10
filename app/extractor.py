@@ -10,6 +10,7 @@ We force structured output with a single tool plus tool_choice, so the model mus
 return the fields as a JSON object rather than prose we would have to parse.
 """
 import base64
+import threading
 from collections.abc import Sequence
 from dataclasses import dataclass
 
@@ -131,13 +132,19 @@ def _build_prompt() -> str:
     )
 
 _client: anthropic.Anthropic | None = None
+# Guards the lazy build so concurrent batch workers do not each construct a client
+# on the first request (the check-then-set below is otherwise a race).
+_client_lock = threading.Lock()
 
 
 def _get_client() -> anthropic.Anthropic:
     """Lazily build and reuse one client (so the connection pool is shared)."""
     global _client
     if _client is None:
-        _client = anthropic.Anthropic(api_key=settings.anthropic_api_key or None)
+        with _client_lock:
+            # Re-check inside the lock: another thread may have built it while we waited.
+            if _client is None:
+                _client = anthropic.Anthropic(api_key=settings.anthropic_api_key or None)
     return _client
 
 

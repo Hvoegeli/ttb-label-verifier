@@ -16,8 +16,12 @@
   {% endif %}
 </div>
 
-{% if resolved_beverage %}
-<p class="detected-type">Checked as <strong>{{ beverage_name }}</strong>{% if overridden %} (you chose this type; the label otherwise reads as {{ detected_beverage }}){% elif detected_beverage %} (detected automatically from the label){% endif %}.</p>
+{% if type_source == 'detected' %}
+<p class="detected-type">Checked as <strong>{{ beverage_name }}</strong> (detected automatically from the label).</p>
+{% elif type_source == 'forced' %}
+<p class="detected-type">Checked as <strong>{{ beverage_name }}</strong> (you selected this type{% if overridden %}; the label otherwise reads as {{ detected_beverage }}{% endif %}).</p>
+{% elif type_source == 'undetermined' %}
+<p class="detected-type">The beverage type could not be determined, so the label was checked under <strong>{{ beverage_name }}</strong> rules as a default. Confirm the type by hand.</p>
 {% endif %}
 
 {% if result.tally and result.tally.total %}
