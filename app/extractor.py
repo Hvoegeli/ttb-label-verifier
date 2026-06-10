@@ -47,6 +47,7 @@ class ExtractionError(Exception):
 
 # Base fields read from every beverage label.
 _BASE_PROPERTIES = {
+    "beverage_type": {"type": "string", "enum": ["spirits", "wine", "beer"], "description": "Classify the beverage from the label. 'spirits' for distilled spirits (whiskey, bourbon, vodka, gin, rum, tequila, brandy, cordials/liqueurs). 'wine' for grape or fruit wine, still or sparkling (Cabernet, Chardonnay, Champagne, port, etc.). 'beer' for malt beverages (beer, ale, lager, IPA, stout, porter, and hard seltzers/flavored malt beverages). Pick the single best fit from the class/type and overall design."},
     "brand_name": {"type": ["string", "null"], "description": "The brand name on the label, or null if absent."},
     "class_type": {"type": ["string", "null"], "description": "The class/type designation, e.g. 'Kentucky Straight Bourbon Whiskey', 'Cabernet Sauvignon', or 'India Pale Ale'; null if absent."},
     "alcohol_content": {"type": ["string", "null"], "description": "The alcohol content statement exactly as printed, e.g. '45% Alc./Vol. (90 Proof)' or '13.5% Alc/Vol', or null."},
@@ -61,9 +62,8 @@ _BASE_PROPERTIES = {
     "warning_legible": {"type": "boolean", "description": "true if the warning text could be read clearly and completely; false if any part was blurry, cut off, or unreadable."},
     "overall_legible": {"type": "boolean", "description": "true if the label image was clear enough to read the fields confidently; false if it was too blurry, dark, angled, or glare-covered."},
 }
-_BASE_REQUIRED = list(_BASE_PROPERTIES.keys())
 
-# Extra fields read only for specific beverages.
+# Extra fields read only for specific beverages (merged into the universal schema).
 _EXTRA_PROPERTIES = {
     "wine": {
         "appellation": {"type": ["string", "null"], "description": "The appellation of origin claimed for the wine (where the grapes are from), e.g. 'Napa Valley' or 'Sonoma Coast', usually shown near the brand or varietal. Record it ONLY if it appears as a stated origin claim for the wine. Do NOT infer it from the city in the producer/bottler address (a bottler located in Napa is not an appellation claim). Null if no appellation is stated."},
@@ -77,47 +77,46 @@ _EXTRA_PROPERTIES = {
     },
 }
 
-_BEVERAGE_NOUN = {
-    "spirits": "distilled spirits",
-    "wine": "wine",
-    "beer": "malt beverage (beer)",
-}
+# Wine-specific guidance always included now that one universal read serves every
+# beverage: the model classifies the type itself, so it must know the wine rules.
+_WINE_GUIDANCE = (
+    " For the appellation field (wine only): an appellation of origin is a "
+    "grape-growing region CLAIMED for the wine, such as 'Napa Valley', 'Sonoma "
+    "Coast', or 'Willamette Valley', usually shown near the brand or the varietal. "
+    "The city inside the producer or bottler address line is NOT an appellation: for "
+    "example in 'Produced and bottled by Stonecrest Cellars, Napa, CA', the 'Napa' is "
+    "just the bottler's location, so appellation must be null unless a region is "
+    "separately claimed for the wine itself."
+)
 
-# Beverage-specific guidance appended to the prompt for tricky fields.
-_EXTRA_GUIDANCE = {
-    "wine": (
-        " IMPORTANT about the appellation field: an appellation of origin is a "
-        "grape-growing region CLAIMED for the wine, such as 'Napa Valley', 'Sonoma "
-        "Coast', or 'Willamette Valley', and it is usually shown near the brand or "
-        "the varietal. The city inside the producer or bottler address line is NOT "
-        "an appellation: for example in 'Produced and bottled by Stonecrest Cellars, "
-        "Napa, CA', the 'Napa' is just the bottler's location, so appellation must be "
-        "null unless a region is separately claimed for the wine itself."
-    ),
-}
+# One universal schema reads every beverage's fields plus the detected type, so a
+# single call serves a mixed batch without the caller pre-selecting a type.
+_UNIVERSAL_PROPERTIES = {**_BASE_PROPERTIES, **_EXTRA_PROPERTIES["wine"], **_EXTRA_PROPERTIES["beer"]}
+_UNIVERSAL_REQUIRED = list(_UNIVERSAL_PROPERTIES.keys())
 
 
-def _build_tool(beverage: str) -> dict:
-    """Build the forced-output tool schema for a beverage (base fields + extras)."""
-    extra = _EXTRA_PROPERTIES.get(beverage, {})
-    properties = {**_BASE_PROPERTIES, **extra}
+def _build_tool() -> dict:
+    """Build the forced-output tool schema (universal: every beverage's fields)."""
     return {
         "name": "record_label_fields",
         "description": "Record the regulated fields read from the alcohol beverage label image.",
         "input_schema": {
             "type": "object",
-            "properties": properties,
-            "required": _BASE_REQUIRED + list(extra.keys()),
+            "properties": _UNIVERSAL_PROPERTIES,
+            "required": _UNIVERSAL_REQUIRED,
         },
     }
 
 
-def _build_prompt(beverage: str) -> str:
-    noun = _BEVERAGE_NOUN.get(beverage, "alcohol beverage")
+def _build_prompt() -> str:
     return (
-        f"You are reading a U.S. {noun} label from one or more photos of the same "
-        "container (for example the front and the back). Read the printed text across "
+        "You are reading a U.S. alcohol beverage label from one or more photos of the "
+        "same container (for example the front and the back). Read the printed text across "
         "all of the images and record each requested field by calling record_label_fields. "
+        "First decide the beverage_type: distilled spirits, wine, or a malt beverage (beer); "
+        "judge from the class/type wording and the overall design. Then read the fields; "
+        "those that do not apply to this beverage (for example grape varietal on a whiskey) "
+        "should be null. "
         "The mandatory information is often split across faces: the government warning, net "
         "contents, and bottler name and address are usually on the back. "
         "Transcribe exactly what is printed; do not infer, correct, complete, or judge "
@@ -128,7 +127,7 @@ def _build_prompt(beverage: str) -> str:
         "by' statement, a foreign producer or bottler address, or a stated country of origin. "
         "If a field is not present on any image, use null. If the images are too unclear to "
         "read a field confidently, set the legibility flags to false rather than guessing."
-        + _EXTRA_GUIDANCE.get(beverage, "")
+        + _WINE_GUIDANCE
     )
 
 _client: anthropic.Anthropic | None = None
@@ -142,8 +141,12 @@ def _get_client() -> anthropic.Anthropic:
     return _client
 
 
-def _extract_once(images: Sequence[bytes], beverage: str, model: str) -> ExtractionResult:
-    """One vision call with a specific model. Raises ExtractionError on failure."""
+def _extract_once(images: Sequence[bytes], model: str) -> ExtractionResult:
+    """One vision call with a specific model. Raises ExtractionError on failure.
+
+    The schema is universal (every beverage's fields plus the detected
+    beverage_type), so no beverage needs to be known before the read.
+    """
     image_blocks = [
         {
             "type": "image",
@@ -156,7 +159,7 @@ def _extract_once(images: Sequence[bytes], beverage: str, model: str) -> Extract
         for b in images
     ]
 
-    tool = _build_tool(beverage)
+    tool = _build_tool()
     try:
         response = _get_client().messages.create(
             model=model,
@@ -165,7 +168,7 @@ def _extract_once(images: Sequence[bytes], beverage: str, model: str) -> Extract
             tool_choice={"type": "tool", "name": tool["name"]},
             messages=[{
                 "role": "user",
-                "content": [*image_blocks, {"type": "text", "text": _build_prompt(beverage)}],
+                "content": [*image_blocks, {"type": "text", "text": _build_prompt()}],
             }],
         )
     except anthropic.APIError as exc:
@@ -211,13 +214,14 @@ def _should_escalate(fields: ExtractedFields) -> bool:
     return False
 
 
-def extract_fields(images: bytes | Sequence[bytes], beverage: str = "spirits") -> ExtractionResult:
+def extract_fields(images: bytes | Sequence[bytes]) -> ExtractionResult:
     """Read one or more normalized JPEGs of the same container into structured fields.
 
     Accepts a single image (bytes) or several (e.g. the front and back of one
     bottle, whose mandatory fields are split across faces). All images go in one
-    call, so the model reconciles them and we pay for one extraction. The schema
-    and prompt adapt to the beverage so wine and beer specific fields are read.
+    call, so the model reconciles them and we pay for one extraction. The read is
+    universal: the model classifies the beverage type and reads every beverage's
+    fields, so the caller does not pre-select a type (see fields.beverage_type).
 
     Robustness: the cheap default model reads first. If that read is low confidence
     or the warning does not match the statute, re-read once with the stronger
@@ -231,12 +235,12 @@ def extract_fields(images: bytes | Sequence[bytes], beverage: str = "spirits") -
         images = [images]
 
     primary = settings.claude_model
-    result = _extract_once(images, beverage, primary)
+    result = _extract_once(images, primary)
 
     esc_model = settings.escalation_model
     if settings.enable_escalation and esc_model and esc_model != primary and _should_escalate(result.fields):
         try:
-            escalated = _extract_once(images, beverage, esc_model)
+            escalated = _extract_once(images, esc_model)
         except ExtractionError:
             # Escalation failed (rate limit, etc.): keep the primary read rather than
             # failing the whole label. The rule engine still gets the first pass.

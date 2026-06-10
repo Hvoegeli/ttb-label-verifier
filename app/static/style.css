@@ -58,8 +58,10 @@ a { color: var(--navy); }
 .choice-card.active { border-color: var(--navy); }
 .choice-card.active:hover { box-shadow: 0 4px 14px rgba(20,49,94,0.18); transform: translateY(-2px); transition: all 0.12s; }
 .choice-card.disabled { opacity: 0.55; }
+.choice-card.recommended { border-color: var(--navy); background: #eaf1fb; }
 .choice-name { font-size: 21px; font-weight: 600; }
 .choice-go { color: var(--navy); font-weight: 600; }
+.detected-type { margin: 0 0 14px; font-size: 14px; color: var(--navy); }
 .choice-soon { color: var(--muted); font-size: 15px; }
 
 /* Upload form */

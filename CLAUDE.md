@@ -36,6 +36,7 @@ Locked decisions from presearch. Do not switch any of these without explicit use
 - The vision model never decides PASS or FAIL. It only returns field values. All verdicts come from deterministic code.
 - Proposed rules (allergen, Alcohol Facts nutrition, cancer warning) are advisory only and must never be hard pass/fail gates.
 - Country of origin (27 CFR 5.69 / 7.69, deferring to CBP marking at 19 CFR part 134) is conditional on the product being an import. Because import status is hard to prove from one photo, this check never hard-FAILs on that inference: it returns NEEDS REVIEW when the label looks imported but states no origin, and PASS otherwise. Do not turn it into an auto-FAIL.
+- Beverage type is auto-detected: the vision read is universal (one schema reads every beverage's fields plus a detected `beverage_type`), and `_run_pipeline` routes to the matching rule set. An explicit user selection overrides the detection; "auto" (the default) trusts it; an unreadable type falls back to spirits. Keep extraction type-agnostic; do not reintroduce a per-beverage schema.
 - When a field cannot be read with confidence, return NEEDS REVIEW. Never auto pass.
 
 ## Workflow rules (from global instructions)

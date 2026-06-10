@@ -70,7 +70,15 @@ def test_landing_lists_spirits():
 
 
 def test_upload_page_renders():
+    # No type selected now defaults to auto-detect.
     r = client.get("/upload")
+    assert r.status_code == 200
+    assert "Upload a label" in r.text
+
+
+def test_upload_page_forced_type_renders():
+    # An explicit type still works and is shown.
+    r = client.get("/upload?beverage=spirits")
     assert r.status_code == 200
     assert "Upload a distilled spirits label" in r.text
 

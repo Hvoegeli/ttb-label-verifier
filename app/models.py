@@ -11,6 +11,9 @@ class ExtractedFields(BaseModel):
     review rather than producing a false verdict.
     """
 
+    # The beverage type the model detects from the label: "spirits", "wine", or
+    # "beer". Drives which rule set runs when the user does not force a type.
+    beverage_type: str | None = None
     brand_name: str | None = None
     class_type: str | None = None
     alcohol_content: str | None = None

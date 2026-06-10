@@ -109,9 +109,9 @@ def landing(request: Request):
 
 
 @app.get("/upload", response_class=HTMLResponse)
-def upload_page(request: Request, beverage: str = "spirits"):
-    if beverage not in VALID_BEVERAGES:
-        beverage = "spirits"
+def upload_page(request: Request, beverage: str = "auto"):
+    if beverage not in VALID_BEVERAGES and beverage != "auto":
+        beverage = "auto"
     return templates.TemplateResponse(
         request, "upload.html", {"beverage": beverage, "beverage_name": _beverage_name(beverage), "error": None}
     )
@@ -137,8 +137,25 @@ async def _validate_and_normalize(image: UploadFile) -> bytes:
     return normalize_to_jpeg(raw, settings.max_upload_mb)
 
 
-def _run_pipeline(jpegs: list[bytes], beverage: str) -> dict:
+def _resolve_beverage(selection: str, detected: str | None) -> str:
+    """Pick which rule set to apply. An explicit beverage selection overrides the
+    model; otherwise use the detected type; fall back to spirits if neither is
+    usable. Selection 'auto' (or anything outside the three rule sets) means
+    'trust the detected type'."""
+    if selection in VALID_BEVERAGES:
+        return selection
+    if detected in VALID_BEVERAGES:
+        return detected
+    return "spirits"
+
+
+def _run_pipeline(jpegs: list[bytes], selection: str = "auto") -> dict:
     """Shared per-label core: one vision call -> rules -> verdict, cost recorded.
+
+    The vision read is universal: it classifies the beverage type and reads every
+    beverage's fields. `selection` is the user's choice: a specific type forces
+    that rule set (an override), while 'auto' routes by the detected type. This is
+    what lets a mixed pile of labels each get judged by the right rule book.
 
     Both /verify (one label) and /batch (many) call this so every verdict comes
     from the same audited path. Returns a plain dict; callers shape it for their
@@ -148,13 +165,16 @@ def _run_pipeline(jpegs: list[bytes], beverage: str) -> dict:
     """
     started = time.perf_counter()
     try:
-        extraction = extract_fields(jpegs, beverage)
+        extraction = extract_fields(jpegs)
     except ExtractionError as exc:
         return {
             "overall": "NEEDS REVIEW",
             "outcomes": [],
             "fields": None,
             "extraction": None,
+            "beverage": _resolve_beverage(selection, None),
+            "detected": None,
+            "overridden": False,
             "note": str(exc),
             "processing_ms": (time.perf_counter() - started) * 1000,
             "cost_usd": None,
@@ -162,6 +182,10 @@ def _run_pipeline(jpegs: list[bytes], beverage: str) -> dict:
 
     processing_ms = (time.perf_counter() - started) * 1000
     fields = extraction.fields
+    detected = fields.beverage_type
+    beverage = _resolve_beverage(selection, detected)
+    # True when the user forced a type that disagrees with what the label looks like.
+    overridden = selection in VALID_BEVERAGES and detected in VALID_BEVERAGES and selection != detected
 
     # Confidence gate: never run compliance checks on an image we could not read.
     if not fields.overall_legible:
@@ -190,6 +214,9 @@ def _run_pipeline(jpegs: list[bytes], beverage: str) -> dict:
         "fields": fields,
         "extraction": extraction,
         "escalated": extraction.escalated,
+        "beverage": beverage,
+        "detected": detected,
+        "overridden": overridden,
         "note": note,
         "processing_ms": processing_ms,
         "cost_usd": extraction.cost_usd,
@@ -201,7 +228,7 @@ async def verify(
     request: Request,
     image: UploadFile = File(...),
     image_back: UploadFile | None = File(default=None),
-    beverage: str = Form(default="spirits"),
+    beverage: str = Form(default="auto"),
     app_brand_name: str = Form(default=""),
     app_fanciful_name: str = Form(default=""),
     app_class_type: str = Form(default=""),
@@ -233,18 +260,22 @@ async def verify(
     # Show the cleaned image(s) back to the user as previews.
     previews = [base64.b64encode(j).decode("ascii") for j in jpegs]
 
-    # Guard the beverage so an unexpected value falls back to spirits rules.
+    # Guard the selection: anything outside the three rule sets means auto-detect.
     if beverage not in VALID_BEVERAGES:
-        beverage = "spirits"
+        beverage = "auto"
 
-    # One vision call reads the fields across all supplied images, then the rule
-    # engine judges them. Shared with /batch so both compute verdicts identically.
+    # One vision call reads the fields across all supplied images and detects the
+    # beverage type; the rule engine then judges them under the detected type unless
+    # the user forced one. Shared with /batch so both compute verdicts identically.
     pipe = _run_pipeline(jpegs, beverage)
     fields = pipe["fields"]
     outcomes = pipe["outcomes"]
     overall = pipe["overall"]
     note = pipe["note"]
     processing_ms = pipe["processing_ms"]
+    resolved = pipe["beverage"]
+    detected = pipe["detected"]
+    overridden = pipe["overridden"]
 
     # Extraction failed outright: nothing was read, so route to human review with
     # the safe message and skip the (impossible) field display and comparisons.
@@ -260,7 +291,9 @@ async def verify(
         }
         return templates.TemplateResponse(
             request, "result.html",
-            {"result": result, "previews": previews, "beverage": beverage},
+            {"result": result, "previews": previews, "beverage": beverage,
+             "detected_beverage": detected, "resolved_beverage": resolved,
+             "overridden": overridden, "beverage_name": _beverage_name(resolved)},
         )
 
     # Advisory (Tier 2) notes: format/size/placement checks a photo cannot prove.
@@ -326,12 +359,12 @@ async def verify(
     # Country of origin is shown only when read, since it is relevant to imports.
     if fields.country_of_origin:
         extracted["Country of origin"] = fields.country_of_origin
-    if beverage == "wine":
+    if resolved == "wine":
         extracted["Appellation"] = fields.appellation
         extracted["Vintage"] = fields.vintage
         extracted["Grape varietal"] = fields.grape_varietal
         extracted["Sulfite statement"] = fields.sulfite_statement
-    elif beverage == "beer" and fields.statement_of_composition:
+    elif resolved == "beer" and fields.statement_of_composition:
         extracted["Statement of composition"] = fields.statement_of_composition
 
     # A quick tally of the mandatory (Golden Rule) checks for the result header,
@@ -362,7 +395,9 @@ async def verify(
     return templates.TemplateResponse(
         request,
         "result.html",
-        {"result": result, "previews": previews, "beverage": beverage},
+        {"result": result, "previews": previews, "beverage": beverage,
+         "detected_beverage": detected, "resolved_beverage": resolved,
+         "overridden": overridden, "beverage_name": _beverage_name(resolved)},
     )
 
 
@@ -382,9 +417,9 @@ def _summarize_outcomes(outcomes: list) -> str:
 
 
 @app.get("/batch", response_class=HTMLResponse)
-def batch_page(request: Request, beverage: str = "spirits"):
-    if beverage not in VALID_BEVERAGES:
-        beverage = "spirits"
+def batch_page(request: Request, beverage: str = "auto"):
+    if beverage not in VALID_BEVERAGES and beverage != "auto":
+        beverage = "auto"
     return templates.TemplateResponse(
         request,
         "batch_upload.html",
@@ -401,17 +436,19 @@ def batch_page(request: Request, beverage: str = "spirits"):
 async def batch_verify(
     request: Request,
     images: list[UploadFile] = File(default=[]),
-    beverage: str = Form(default="spirits"),
+    beverage: str = Form(default="auto"),
 ):
     """Verify many labels in one request (one image per label, front face).
 
-    Each label runs the same shared pipeline as the single-label path, in series.
-    One unreadable photo becomes a NEEDS REVIEW row rather than aborting the run.
-    A demo-sized cap keeps the request responsive; the result page projects the
-    real measured per-label cost and time out to production volumes.
+    Each label runs the same shared pipeline as the single-label path, concurrently.
+    By default the beverage type is auto-detected per label, so a mixed pile (some
+    wine, some beer, some spirits) is each judged by the right rule set; a specific
+    selection forces one rule set for every label. One unreadable photo becomes a
+    NEEDS REVIEW row rather than aborting the run. A demo-sized cap keeps the request
+    responsive; the result page projects the real per-label cost and time to volume.
     """
-    if beverage not in VALID_BEVERAGES:
-        beverage = "spirits"
+    if beverage not in VALID_BEVERAGES and beverage != "auto":
+        beverage = "auto"
 
     # Ignore empty file parts the browser may submit for an untouched input.
     files = [f for f in images if f is not None and f.filename]
@@ -469,6 +506,7 @@ async def batch_verify(
         if item["error"] is not None:
             rows.append({
                 "filename": item["filename"],
+                "type": None,
                 "overall": "NEEDS REVIEW",
                 "reason": item["error"],
                 "cost_usd": None,
@@ -478,6 +516,9 @@ async def batch_verify(
         reason = pipe["note"] or _summarize_outcomes(pipe["outcomes"]) or "All mandatory checks passed."
         rows.append({
             "filename": item["filename"],
+            # The type the label was judged as: detected per label (or the forced
+            # selection). Shown so a mixed batch makes its routing visible.
+            "type": _beverage_name(pipe["beverage"]),
             "overall": pipe["overall"],
             "reason": reason,
             "cost_usd": pipe["cost_usd"],

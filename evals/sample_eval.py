@@ -34,10 +34,13 @@ def evaluate(entry: dict) -> dict:
     jpeg = normalize_to_jpeg(image_path.read_bytes(), settings.max_upload_mb)
 
     started = time.perf_counter()
-    extraction = extract_fields(jpeg, entry["beverage"])
+    extraction = extract_fields(jpeg)
     latency_ms = (time.perf_counter() - started) * 1000
 
     fields = extraction.fields
+    # Grade the rules against the KNOWN beverage type (controlled), and separately
+    # check whether the universal read detected that type correctly.
+    detected = fields.beverage_type
     if not fields.overall_legible:
         outcomes = []
         overall = "NEEDS REVIEW"
@@ -54,6 +57,8 @@ def evaluate(entry: dict) -> dict:
         "overall": overall,
         "expected": expected,
         "match": match,
+        "detected": detected,
+        "type_match": detected == entry["beverage"],
         "cost_usd": extraction.cost_usd,
         "latency_ms": latency_ms,
     }

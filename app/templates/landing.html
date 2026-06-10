@@ -2,9 +2,13 @@
 {% block title %}Choose beverage type{% endblock %}
 {% block content %}
 <h1>Check an alcohol label against federal rules</h1>
-<p class="lead">Upload a photo of the label. You get a PASS, FAIL, or NEEDS REVIEW verdict with a plain reason and a regulation citation for every requirement. Start by choosing the type of alcohol.</p>
+<p class="lead">Upload a photo of the label. You get a PASS, FAIL, or NEEDS REVIEW verdict with a plain reason and a regulation citation for every requirement. The tool figures out whether it is spirits, wine, or beer for you, so you can just start.</p>
 
 <div class="choice-grid">
+  <a class="choice-card active recommended" href="/upload?beverage=auto">
+    <span class="choice-name">Auto-detect</span>
+    <span class="choice-go">Recommended &rarr;</span>
+  </a>
   {% for b in beverages %}
     {% if b.active %}
       <a class="choice-card active" href="/upload?beverage={{ b.id }}">
@@ -20,7 +24,8 @@
   {% endfor %}
 </div>
 
-<p class="hint batch-hint">Have many labels of the same type to check? Pick the type above, then choose <strong>batch mode</strong> on the next screen to verify several at once.</p>
+<p class="hint">Auto-detect reads the type off each label. Pick a specific type only if you want to force it (for example, to check a label against one rule set on purpose).</p>
+<p class="hint batch-hint">Have many labels to check, even a mix of types? Choose <strong>batch mode</strong> on the next screen to verify several at once, each judged by the right rules.</p>
 {% endblock %}
 
 {% block scripts %}

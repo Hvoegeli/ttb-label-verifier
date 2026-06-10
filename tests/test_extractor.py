@@ -46,12 +46,12 @@ def test_should_escalate_triggers():
 def test_escalates_on_low_confidence(monkeypatch):
     calls = []
 
-    def fake(images, beverage, model):
+    def fake(images, model):
         calls.append(model)
         return _result(model, overall_legible=False) if model == HAIKU else _result(model)
 
     _wire(monkeypatch, fake)
-    res = extract_fields([b"x"], "spirits")
+    res = extract_fields([b"x"])
     assert calls == [HAIKU, SONNET]
     assert res.escalated is True
     assert res.model == f"{HAIKU}+{SONNET}"
@@ -62,12 +62,12 @@ def test_escalates_on_warning_mismatch(monkeypatch):
     calls = []
     garbled = CANONICAL.replace("health problems.", "health issues.")
 
-    def fake(images, beverage, model):
+    def fake(images, model):
         calls.append(model)
         return _result(model, government_warning=garbled) if model == HAIKU else _result(model)
 
     _wire(monkeypatch, fake)
-    res = extract_fields([b"x"], "spirits")
+    res = extract_fields([b"x"])
     assert calls == [HAIKU, SONNET]
     assert res.escalated is True
 
@@ -75,12 +75,12 @@ def test_escalates_on_warning_mismatch(monkeypatch):
 def test_no_escalation_on_clean_read(monkeypatch):
     calls = []
 
-    def fake(images, beverage, model):
+    def fake(images, model):
         calls.append(model)
         return _result(model)
 
     _wire(monkeypatch, fake)
-    res = extract_fields([b"x"], "spirits")
+    res = extract_fields([b"x"])
     assert calls == [HAIKU]
     assert res.escalated is False
     assert res.model == HAIKU
@@ -89,23 +89,23 @@ def test_no_escalation_on_clean_read(monkeypatch):
 def test_escalation_can_be_disabled(monkeypatch):
     calls = []
 
-    def fake(images, beverage, model):
+    def fake(images, model):
         calls.append(model)
         return _result(model, overall_legible=False)
 
     _wire(monkeypatch, fake, enabled=False)
-    res = extract_fields([b"x"], "spirits")
+    res = extract_fields([b"x"])
     assert calls == [HAIKU]
     assert res.escalated is False
 
 
 def test_escalation_failure_keeps_primary(monkeypatch):
-    def fake(images, beverage, model):
+    def fake(images, model):
         if model == HAIKU:
             return _result(model, overall_legible=False)
         raise extractor.ExtractionError("escalation unavailable")
 
     _wire(monkeypatch, fake)
-    res = extract_fields([b"x"], "spirits")
+    res = extract_fields([b"x"])
     assert res.escalated is False  # fell back to the primary read
     assert res.model == HAIKU

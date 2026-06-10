@@ -2,9 +2,14 @@
 {% block title %}Upload a label{% endblock %}
 {% block content %}
 <p><a class="back" href="/">&larr; Change type</a></p>
+{% if beverage == 'auto' %}
+<h1>Upload a label</h1>
+<p class="lead">Take or choose a clear photo of the label. JPG, PNG, WebP, or HEIC. The tool detects whether it is spirits, wine, or beer and checks it against the right rules.</p>
+{% else %}
 <h1>Upload a {{ (beverage_name | default('')) | lower }} label</h1>
-<p class="lead">Take or choose a clear photo of the label. JPG, PNG, WebP, or HEIC.</p>
-<p class="hint"><a href="/batch?beverage={{ beverage }}">Checking several {{ (beverage_name | default('')) | lower }} labels at once? Switch to batch mode &rarr;</a></p>
+<p class="lead">Take or choose a clear photo of the label. JPG, PNG, WebP, or HEIC. You picked {{ (beverage_name | default('')) | lower }}, so it will be checked against those rules.</p>
+{% endif %}
+<p class="hint"><a href="/batch?beverage={{ beverage }}">Checking several labels at once? Switch to batch mode &rarr;</a></p>
 
 {% if error %}
 <div class="alert error">{{ error }}</div>
@@ -35,10 +40,10 @@
       <label class="app-field"><span>Class/type designation</span><input type="text" name="app_class_type" placeholder="Kentucky Straight Bourbon Whiskey"></label>
       <label class="app-field"><span>Alcohol content</span><input type="text" name="app_alcohol_content" placeholder="45% Alc./Vol."></label>
       <label class="app-field"><span>Net contents</span><input type="text" name="app_net_contents" placeholder="750 mL"></label>
-      {% if beverage == 'wine' %}
-      <label class="app-field"><span>Appellation</span><input type="text" name="app_appellation" placeholder="Napa Valley"></label>
-      <label class="app-field"><span>Grape varietal</span><input type="text" name="app_grape_varietal" placeholder="Cabernet Sauvignon"></label>
-      <label class="app-field"><span>Vintage</span><input type="text" name="app_vintage" placeholder="2019"></label>
+      {% if beverage in ['wine', 'auto'] %}
+      <label class="app-field"><span>Appellation (wine)</span><input type="text" name="app_appellation" placeholder="Napa Valley"></label>
+      <label class="app-field"><span>Grape varietal (wine)</span><input type="text" name="app_grape_varietal" placeholder="Cabernet Sauvignon"></label>
+      <label class="app-field"><span>Vintage (wine)</span><input type="text" name="app_vintage" placeholder="2019"></label>
       {% endif %}
 
       <p class="app-form-section">Filing details (context, not matched)</p>

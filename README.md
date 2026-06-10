@@ -1,13 +1,14 @@
 # TTB Alcohol Label Verification (Prototype)
 
 A web prototype that verifies U.S. alcohol beverage labels against federal TTB
-rules. An agent picks a beverage type (distilled spirits, wine, or malt
-beverage), uploads a photo of the label; one Claude vision call reads the
-regulated fields off the image; a deterministic Python rule engine checks those
-fields against the right regulations (27 CFR Part 5 for spirits, Part 4 for wine,
-Part 7 for malt beverages, and Part 16 for the health warning); and the app
+rules. An agent uploads a photo of the label; one Claude vision call detects the
+beverage type (distilled spirits, wine, or malt beverage) and reads the regulated
+fields off the image; a deterministic Python rule engine checks those fields
+against the right regulations for that type (27 CFR Part 5 for spirits, Part 4 for
+wine, Part 7 for malt beverages, and Part 16 for the health warning); and the app
 returns a PASS / FAIL / NEEDS REVIEW verdict with a plain reason and a CFR
-citation for every field.
+citation for every field. The agent can force a specific type to override the
+detection.
 
 Built as a take-home for a U.S. Treasury interview. Not an official TTB system;
 results assist a human reviewer and are not final determinations.
@@ -16,8 +17,11 @@ results assist a human reviewer and are not final determinations.
 
 - Reads a label image (JPG, PNG, WebP, or HEIC), front and optional back, and
   extracts the regulated fields.
-- Runs the rule set for the chosen beverage. For distilled spirits, the in-force
-  checks are:
+- Detects the beverage type (spirits, wine, or beer) from the label and routes it
+  to the matching rule set automatically, so a mixed pile of labels is each judged
+  correctly. The agent can force a type to override the detection.
+- Runs the rule set for the detected (or forced) beverage. For distilled spirits,
+  the in-force checks are:
   - Government Warning present with the required wording, "GOVERNMENT WARNING" in capitals (27 CFR 16.21 / 16.22)
   - Net contents is an authorized standard of fill (27 CFR 5.203)
   - Alcohol content stated as percent alcohol by volume; proof optional (27 CFR 5.65)
@@ -43,8 +47,9 @@ decision is made by pure, testable Python.
 
 ```
 image upload -> normalize (JPEG, strip EXIF, downscale)
-            -> one Claude vision call (forced tool-use -> typed JSON)
-            -> deterministic rule engine (27 CFR Parts 5 + 16)
+            -> one Claude vision call (forced tool-use -> typed JSON,
+               including the detected beverage type)
+            -> deterministic rule engine for that type (27 CFR Part 4 / 5 / 7 + 16)
             -> PASS / FAIL / NEEDS REVIEW + per-field reasons + citations
 ```
 

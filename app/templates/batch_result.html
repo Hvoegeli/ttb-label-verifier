@@ -36,12 +36,13 @@
 
 <table class="fields batch-table">
   <thead>
-    <tr><th>Label</th><th>Verdict</th><th>Reason</th><th>Cost</th><th>Time</th></tr>
+    <tr><th>Label</th><th>Type</th><th>Verdict</th><th>Reason</th><th>Cost</th><th>Time</th></tr>
   </thead>
   <tbody>
     {% for r in rows %}
     <tr class="row-{{ r.overall|lower|replace(' ', '-') }}">
       <td class="batch-file">{{ r.filename }}</td>
+      <td>{{ r.type or '&mdash;' | safe }}</td>
       <td><span class="verdict-pill verdict-{{ r.overall|lower|replace(' ', '-') }}">{{ r.overall }}</span></td>
       <td>{{ r.reason }}</td>
       <td>{% if r.cost_usd is not none %}${{ '%.4f' % r.cost_usd }}{% else %}&mdash;{% endif %}</td>

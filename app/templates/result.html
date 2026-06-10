@@ -16,6 +16,10 @@
   {% endif %}
 </div>
 
+{% if resolved_beverage %}
+<p class="detected-type">Checked as <strong>{{ beverage_name }}</strong>{% if overridden %} (you chose this type; the label otherwise reads as {{ detected_beverage }}){% elif detected_beverage %} (detected automatically from the label){% endif %}.</p>
+{% endif %}
+
 {% if result.tally and result.tally.total %}
 <p class="rule-tally"><strong>{{ result.tally.pass }} of {{ result.tally.total }}</strong> mandatory checks passed{% if result.tally.fail %} &middot; <span class="tally-fail">{{ result.tally.fail }} failed</span>{% endif %}{% if result.tally.review %} &middot; <span class="tally-review">{{ result.tally.review }} need review</span>{% endif %}.</p>
 {% endif %}
