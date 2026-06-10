@@ -7,6 +7,7 @@ The vision model is mocked, so these are deterministic and free. They prove:
   - the empty and over-cap guards reject before any model call.
 """
 import io
+import itertools
 
 import pytest
 from fastapi.testclient import TestClient
@@ -65,18 +66,20 @@ def test_batch_page_renders():
     r = client.get("/batch?beverage=spirits")
     assert r.status_code == 200
     assert "Batch verify" in r.text
-    assert "up to 25" in r.text  # default cap surfaced to the user
+    assert "up to 50" in r.text  # default cap surfaced to the user
 
 
 def test_batch_mixes_verdicts_and_projects(monkeypatch):
-    # Three labels, three different outcomes, driven by call order.
-    calls = {"n": 0}
+    # Three labels, three different outcomes. Labels now run concurrently, so the
+    # counter must be thread-safe (itertools.count.__next__ is atomic in CPython)
+    # and the test only asserts the set of verdicts appears, not which file got which.
+    counter = itertools.count(1)
 
     def fake(images, beverage="spirits"):
-        calls["n"] += 1
-        if calls["n"] == 1:
+        n = next(counter)
+        if n == 1:
             return _fake_result()                          # compliant -> PASS
-        if calls["n"] == 2:
+        if n == 2:
             return _fake_result(net_contents="800 mL")     # illegal fill -> FAIL
         return _fake_result(overall_legible=False)         # unreadable -> NEEDS REVIEW
 
@@ -125,11 +128,11 @@ def test_batch_one_bad_file_becomes_review_not_abort(monkeypatch):
 def test_batch_extraction_error_row_does_not_abort(monkeypatch):
     # If the model call fails for one label, that row routes to review and the
     # rest of the batch still completes.
-    calls = {"n": 0}
+    counter = itertools.count(1)
 
     def fake(images, beverage="spirits"):
-        calls["n"] += 1
-        if calls["n"] == 2:
+        # Exactly one call (the 2nd issued) fails; concurrency-safe counter.
+        if next(counter) == 2:
             raise ExtractionError("The label-reading service was unavailable. Please try again.")
         return _fake_result()
 
@@ -155,6 +158,40 @@ def test_batch_over_cap_is_rejected(monkeypatch):
     r = client.post("/batch", files=files, data={"beverage": "spirits"})
     assert r.status_code == 400
     assert "up to 1 labels" in r.text
+
+
+def test_batch_runs_labels_concurrently(monkeypatch):
+    # Prove overlap deterministically: each fake holds its slot briefly while a
+    # shared counter tracks how many ran at once. Serial execution would peak at 1.
+    import threading
+    import time as _time
+
+    active = {"now": 0, "max": 0}
+    lock = threading.Lock()
+
+    def fake(images, beverage="spirits"):
+        with lock:
+            active["now"] += 1
+            active["max"] = max(active["max"], active["now"])
+        _time.sleep(0.05)  # hold the slot so genuine parallelism is observable
+        with lock:
+            active["now"] -= 1
+        return _fake_result()
+
+    monkeypatch.setattr(main_module, "extract_fields", fake)
+    files = [_img(f"l{i}.png") for i in range(6)]
+    r = client.post("/batch", files=files, data={"beverage": "spirits"})
+    assert r.status_code == 200
+    assert active["max"] >= 2, "labels did not run concurrently"
+
+
+def test_batch_accepts_more_than_old_cap(monkeypatch):
+    # 30 labels (above the previous 25 cap) must now process, not be rejected.
+    monkeypatch.setattr(main_module, "extract_fields", lambda *a, **k: _fake_result())
+    files = [_img(f"n{i}.png") for i in range(30)]
+    r = client.post("/batch", files=files, data={"beverage": "spirits"})
+    assert r.status_code == 200
+    assert "What this means at scale" in r.text  # the result page, not the reject page
 
 
 def test_batch_records_each_label_cost(monkeypatch):

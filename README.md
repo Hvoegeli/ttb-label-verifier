@@ -156,8 +156,13 @@ cost-and-time projection, a loading indicator during the model call, the 71-case
 golden set eval with a CI gate, and cost/efficiency reporting. In progress: a
 public deployment and a manual extraction eval on real bottle photos.
 
-Batch mode runs labels synchronously up to a configurable cap (`MAX_BATCH`,
-default 25) so the demo stays responsive. A production system handling the
-200 to 300 label volumes in the requirements would run the same per-label
-pipeline on a background job queue with a progress page; the synchronous demo
-proves the per-label economics and projects them out to those volumes.
+Batch mode reads labels concurrently (up to `BATCH_CONCURRENCY` at once, default
+8) within one request, up to a configurable cap (`MAX_BATCH`, default 50) that
+keeps the request from outliving its timeout. Because each label is a
+network-bound model call, overlapping them cuts batch wall-clock roughly
+8-fold; the result page shows the actual elapsed time next to the one-at-a-time
+equivalent. A production system handling the 200 to 300 label volumes in the
+requirements would run the same per-label pipeline on a background job queue
+with a progress page (so a 300-label run is not held open in a single request);
+the in-request demo proves the per-label economics and projects them out to
+those volumes.

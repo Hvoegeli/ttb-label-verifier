@@ -27,8 +27,8 @@
     <span class="summary-label">total cost</span>
   </div>
   <div class="summary-stat">
-    <span class="summary-num">{{ '%.1f' % summary.total_seconds }}s</span>
-    <span class="summary-label">total time</span>
+    <span class="summary-num">{{ '%.1f' % summary.wall_clock_seconds }}s</span>
+    <span class="summary-label">actual time{% if summary.total_seconds > summary.wall_clock_seconds + 0.05 %} ({{ '%.0f' % summary.total_seconds }}s one at a time){% endif %}</span>
   </div>
 </div>
 
@@ -55,8 +55,10 @@
   <h2>What this means at scale</h2>
   <p class="muted">The figures below multiply the measured average from this batch
     (${{ '%.4f' % summary.avg_cost }} and {{ '%.1f' % summary.avg_seconds }}s per label)
-    by larger volumes. Cost is exact from token usage; time is a conservative
-    serial estimate, since a production queue would run labels in parallel. See
+    by larger volumes. Cost is exact from token usage; the time column is a
+    conservative one-at-a-time estimate. This demo already runs labels in parallel
+    (see the actual time above), and a production queue would parallelize further,
+    so real wall-clock is well under these figures. See
     <a href="/stats">Cost &amp; efficiency</a> for the labor-savings comparison.</p>
   <table class="fields">
     <thead>

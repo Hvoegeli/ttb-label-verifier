@@ -10,8 +10,10 @@ Extraction (Task Group 3) and the rule engine (Task Group 4) are not wired in
 yet. Until they are, /verify validates and normalizes the image and renders the
 result skeleton with a clear "pending" notice, so the app runs end to end today.
 """
+import asyncio
 import base64
 import time
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 from fastapi import FastAPI, File, Form, Request, UploadFile
@@ -436,24 +438,46 @@ async def batch_verify(
             "the labels would run on a background queue; see the note on the batch page."
         )
 
-    rows = []
+    # Normalize all images first (fast, local CPU work). Defer the slow per-label
+    # model calls so they can run concurrently below. An unreadable file is held as
+    # an error and becomes a NEEDS REVIEW row, never aborting the run.
+    prepared = []
     for f in files:
         try:
             jpeg = await _validate_and_normalize(f)
+            prepared.append({"filename": f.filename, "jpeg": jpeg, "error": None})
         except ImageValidationError as exc:
+            prepared.append({"filename": f.filename, "jpeg": None, "error": str(exc)})
+
+    # Read the labels concurrently. Each label is one network-bound model call, so
+    # overlapping them cuts batch wall-clock by roughly BATCH_CONCURRENCY-fold. The
+    # per-label cost and latency recorded inside _run_pipeline are per-label and
+    # unchanged, so the measured efficiency figures stay honest; only the total
+    # wall-clock shrinks. gather preserves order, so rows still map to filenames.
+    loop = asyncio.get_running_loop()
+    wall_start = time.perf_counter()
+    with ThreadPoolExecutor(max_workers=settings.batch_concurrency) as pool:
+        async def _process(item):
+            if item["jpeg"] is None:
+                return None
+            return await loop.run_in_executor(pool, _run_pipeline, [item["jpeg"]], beverage)
+        pipes = await asyncio.gather(*(_process(item) for item in prepared))
+    wall_clock_seconds = time.perf_counter() - wall_start
+
+    rows = []
+    for item, pipe in zip(prepared, pipes):
+        if item["error"] is not None:
             rows.append({
-                "filename": f.filename,
+                "filename": item["filename"],
                 "overall": "NEEDS REVIEW",
-                "reason": str(exc),
+                "reason": item["error"],
                 "cost_usd": None,
                 "processing_ms": 0.0,
             })
             continue
-
-        pipe = _run_pipeline([jpeg], beverage)
         reason = pipe["note"] or _summarize_outcomes(pipe["outcomes"]) or "All mandatory checks passed."
         rows.append({
-            "filename": f.filename,
+            "filename": item["filename"],
             "overall": pipe["overall"],
             "reason": reason,
             "cost_usd": pipe["cost_usd"],
@@ -488,6 +512,9 @@ async def batch_verify(
         "total_seconds": total_ms / 1000,
         "avg_cost": avg_cost,
         "avg_seconds": avg_seconds,
+        # Actual elapsed time for the whole batch. Because labels run concurrently,
+        # this is much less than total_seconds (the one-at-a-time equivalent).
+        "wall_clock_seconds": wall_clock_seconds,
         "projections": projections,
     }
     return templates.TemplateResponse(

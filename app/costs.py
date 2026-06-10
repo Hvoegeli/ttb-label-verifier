@@ -11,6 +11,7 @@ efficiency reviewer should be able to audit line by line.
 """
 import json
 import os
+import threading
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -24,6 +25,9 @@ PRICING = {
 
 # Where the append-only metrics log lives. Gitignored runtime data.
 METRICS_PATH = Path(os.getenv("METRICS_PATH") or "metrics/usage.jsonl")
+
+# Serializes appends so concurrent batch workers can't interleave a line.
+_WRITE_LOCK = threading.Lock()
 
 
 def cost_usd(model: str, input_tokens: int, output_tokens: int) -> float:
@@ -50,9 +54,11 @@ def record(model: str, input_tokens: int, output_tokens: int, cost_usd: float, l
         "verdict": verdict,
     }
     try:
-        METRICS_PATH.parent.mkdir(parents=True, exist_ok=True)
-        with METRICS_PATH.open("a", encoding="utf-8") as fh:
-            fh.write(json.dumps(rec) + "\n")
+        line = json.dumps(rec) + "\n"
+        with _WRITE_LOCK:
+            METRICS_PATH.parent.mkdir(parents=True, exist_ok=True)
+            with METRICS_PATH.open("a", encoding="utf-8") as fh:
+                fh.write(line)
     except OSError:
         # Metrics must never take down a verification. Silently skip if unwritable.
         pass

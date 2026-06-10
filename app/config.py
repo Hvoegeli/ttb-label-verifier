@@ -28,11 +28,17 @@ class Settings:
     # Reject uploads larger than this before doing any work.
     max_upload_mb: int = int(os.getenv("MAX_UPLOAD_MB", "10"))
     # Most labels one batch request processes synchronously. The batch runs the
-    # vision call per label in series, so a large batch would outlast an HTTP
-    # request; production would move 200-300 label runs to a background queue.
-    # This cap keeps the live demo responsive while still proving the cost story
-    # (the result page projects the measured per-label figures out to any volume).
-    max_batch: int = int(os.getenv("MAX_BATCH", "25"))
+    # per-label vision calls concurrently (see BATCH_CONCURRENCY), so wall-clock
+    # no longer grows linearly; production would still move 200-300 label runs to
+    # a background queue. This cap keeps the live demo responsive while proving the
+    # cost story (the result page projects the measured per-label figures out to
+    # any volume).
+    max_batch: int = int(os.getenv("MAX_BATCH", "50"))
+    # How many labels in a batch are read at once. Each label is one network call
+    # that mostly waits on the model, so overlapping them cuts batch wall-clock
+    # roughly N-fold. 8 is well within Anthropic's rate limits for Haiku and light
+    # on memory. Raise for speed, lower if a small API tier returns rate limits.
+    batch_concurrency: int = int(os.getenv("BATCH_CONCURRENCY", "8"))
     app_env: str = os.getenv("APP_ENV", "dev")
 
 
