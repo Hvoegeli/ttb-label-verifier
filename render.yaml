@@ -1,0 +1,26 @@
+# Render Blueprint: one always-on web service for the TTB label verifier.
+# Deploy by creating a Blueprint in the Render dashboard pointed at this repo.
+# The ANTHROPIC_API_KEY is intentionally NOT in this file (sync: false) — it is
+# entered as a secret in the Render dashboard so it never lands in git.
+services:
+  - type: web
+    name: ttb-label-verifier
+    runtime: python
+    # Always-on tier: the free tier spins down when idle and cold-starts in
+    # 30-50s, which would miss the 5-second target. Starter stays warm.
+    plan: starter
+    region: oregon
+    branch: main
+    buildCommand: pip install -r requirements.txt
+    # One worker: the batch path parallelizes with threads inside the process,
+    # and the metrics log + client singleton are process-local, so a single
+    # worker keeps /stats and cost accounting consistent.
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /healthz
+    envVars:
+      - key: ANTHROPIC_API_KEY
+        sync: false            # set in the dashboard; never committed
+      - key: PYTHON_VERSION
+        value: "3.12.7"
+      - key: APP_ENV
+        value: prod

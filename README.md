@@ -70,6 +70,21 @@ uvicorn app.main:app --reload
 
 Open http://127.0.0.1:8000 and upload a label image.
 
+## Deploy (Render)
+
+The repo ships a `render.yaml` Blueprint, so the public demo is reproducible:
+
+1. In the Render dashboard, create a **Blueprint** from this GitHub repo. Render
+   reads `render.yaml` and provisions one always-on web service.
+2. Set the `ANTHROPIC_API_KEY` environment variable as a **secret** in the
+   dashboard (it is declared `sync: false`, so it is never stored in git).
+3. Deploy. Render runs `pip install -r requirements.txt`, then
+   `uvicorn app.main:app --host 0.0.0.0 --port $PORT`, and polls `/healthz`.
+
+The service uses the always-on **Starter** plan so the container never spins
+down; a free instance would cold-start in 30 to 50 seconds and miss the
+5-second latency target. `/healthz` is the health check and keep-alive endpoint.
+
 ## Configuration
 
 Set in `.env` (see `.env.example`):
